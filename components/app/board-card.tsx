@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import { updateBoard, deleteBoard } from "@/lib/actions/boards"
 import { Button } from "@/components/ui/button"
@@ -75,14 +76,17 @@ export function BoardCard({ board, workspaceId }: BoardCardProps) {
     <>
       <div className="group relative rounded-lg border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
         <div className="flex items-start justify-between">
-          <div className="space-y-1">
+          <Link
+            href={`/w/${workspaceId}/b/${board.id}`}
+            className="flex-1 min-w-0 space-y-1 pr-2"
+          >
             <h3 className="font-medium leading-tight">{board.name}</h3>
             {board.description && (
               <p className="text-sm text-muted-foreground line-clamp-2">
                 {board.description}
               </p>
             )}
-          </div>
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

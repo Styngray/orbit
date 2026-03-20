@@ -6,7 +6,7 @@
 |---|-----------|--------|--------|
 | 1 | Foundation & Auth | ✅ Complete | supabase |
 | 2 | Onboarding & Workspaces | ✅ Complete | supabase |
-| 3 | Kanban & Tasks | 🔲 Not started | milestone/3-kanban |
+| 3 | Kanban & Tasks | ✅ Complete | milestone/3-kanban |
 | 4 | Team & User Management | 🔲 Not started | milestone/4-team-mgmt |
 | 5 | Payments (Stripe) | 🔲 Not started | milestone/5-payments |
 | 6 | AI Features | 🔲 Not started | milestone/6-ai |
@@ -38,12 +38,12 @@
 ## Milestone 3: Kanban & Tasks
 **Goal:** Full kanban board with drag-and-drop task management
 
-- [ ] Kanban columns with configurable statuses
-- [ ] Task cards (title, assignee, priority, labels)
-- [ ] Drag-and-drop (dnd-kit)
-- [ ] Task detail modal/panel
-- [ ] Task creation (quick-add + full form)
-- [ ] Keyboard shortcuts
+- [x] Kanban columns with configurable statuses
+- [x] Task cards (title, assignee, priority, labels)
+- [x] Drag-and-drop (dnd-kit)
+- [x] Task detail modal/panel
+- [x] Task creation (quick-add + full form)
+- [x] Keyboard shortcuts
 
 ---
 

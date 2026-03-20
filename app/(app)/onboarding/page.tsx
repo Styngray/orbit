@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createTeam, createWorkspace } from "@/lib/actions/teams"
+import { createTeamAndWorkspace } from "@/lib/actions/teams"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,30 +11,21 @@ import { toast } from "sonner"
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
-  const [teamId, setTeamId] = useState<string | null>(null)
   const [teamName, setTeamName] = useState("")
   const [workspaceName, setWorkspaceName] = useState("My Workspace")
   const [loading, setLoading] = useState(false)
 
-  async function handleCreateTeam(e: React.FormEvent) {
+  function handleTeamStep(e: React.FormEvent) {
     e.preventDefault()
     if (!teamName.trim()) return
-    setLoading(true)
-    const result = await createTeam(teamName.trim())
-    setLoading(false)
-    if (result.error) {
-      toast.error(result.error)
-      return
-    }
-    setTeamId(result.data!.teamId)
     setStep(2)
   }
 
   async function handleCreateWorkspace(e: React.FormEvent) {
     e.preventDefault()
-    if (!teamId || !workspaceName.trim()) return
+    if (!teamName.trim() || !workspaceName.trim()) return
     setLoading(true)
-    const result = await createWorkspace(teamId, workspaceName.trim())
+    const result = await createTeamAndWorkspace(teamName.trim(), workspaceName.trim())
     setLoading(false)
     if (result.error) {
       toast.error(result.error)
@@ -44,6 +35,7 @@ export default function OnboardingPage() {
   }
 
   return (
+    <div className="p-6 h-full overflow-y-auto">
     <div className="flex min-h-full items-center justify-center py-12">
       <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-sm">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -57,7 +49,7 @@ export default function OnboardingPage() {
         </div>
 
         {step === 1 && (
-          <form onSubmit={handleCreateTeam} className="space-y-4">
+          <form onSubmit={handleTeamStep} className="space-y-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
                 Name your team
@@ -109,6 +101,7 @@ export default function OnboardingPage() {
           </form>
         )}
       </div>
+    </div>
     </div>
   )
 }

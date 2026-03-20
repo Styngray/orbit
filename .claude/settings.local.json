@@ -16,7 +16,12 @@
       "Bash(xargs grep:*)",
       "Bash(curl -s -X GET \"http://127.0.0.1:54321/auth/v1/settings\" -H \"apikey: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH\")",
       "Bash(curl:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(ls /c/Users/knytr/orbit/app/\\\\\\(app\\\\\\)/w/)",
+      "Bash(ls /c/Users/knytr/orbit/app/\\\\\\(app\\\\\\)/)",
+      "Bash(ls /c/Users/knytr/orbit/app/\\\\\\(app\\\\\\)/onboarding/)",
+      "Bash(ls /c/Users/knytr/orbit/app/\\\\\\(app\\\\\\)/w/[workspaceId]/)",
+      "Bash(find /c/Users/knytr/orbit/node_modules/next/dist/docs/ -type f -name *.md)"
     ]
   }
 }
