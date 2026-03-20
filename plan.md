@@ -5,7 +5,7 @@
 | # | Milestone | Status | Branch |
 |---|-----------|--------|--------|
 | 1 | Foundation & Auth | ✅ Complete | supabase |
-| 2 | Onboarding & Workspaces | 🔲 Not started | milestone/2-onboarding |
+| 2 | Onboarding & Workspaces | ✅ Complete | supabase |
 | 3 | Kanban & Tasks | 🔲 Not started | milestone/3-kanban |
 | 4 | Team & User Management | 🔲 Not started | milestone/4-team-mgmt |
 | 5 | Payments (Stripe) | 🔲 Not started | milestone/5-payments |
@@ -28,10 +28,10 @@
 ## Milestone 2: Onboarding & Workspaces
 **Goal:** New users can create a team and set up their workspace
 
-- [ ] Onboarding wizard (create team → name workspace → invite members)
-- [ ] Workspace switcher in nav
-- [ ] Boards CRUD
-- [ ] Workspace settings page
+- [x] Onboarding wizard (create team → name workspace → invite members)
+- [x] Workspace switcher in nav
+- [x] Boards CRUD
+- [x] Workspace settings page
 
 ---
 
