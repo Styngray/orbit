@@ -32,11 +32,13 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
   const isOwner = membership?.role === "owner"
 
   return (
+    <div className="p-6 h-full overflow-y-auto">
     <div className="max-w-2xl space-y-8">
       <h1 className="text-2xl font-semibold tracking-tight">
         Workspace settings
       </h1>
       <WorkspaceSettingsForm workspace={workspace} isOwner={isOwner} />
+    </div>
     </div>
   )
 }

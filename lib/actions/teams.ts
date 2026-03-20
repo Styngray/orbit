@@ -60,6 +60,42 @@ export async function createWorkspace(
   return { data: { workspaceId: workspace.id } }
 }
 
+export async function createTeamAndWorkspace(
+  teamName: string,
+  workspaceName: string
+): Promise<{ data?: { workspaceId: string }; error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authenticated" }
+
+  const admin = createAdminClient()
+
+  const teamSlug = `${slugify(teamName) || "team"}-${Math.random().toString(36).slice(2, 6)}`
+  const { data: team, error: teamError } = await admin
+    .from("teams")
+    .insert({ name: teamName, slug: teamSlug })
+    .select("id")
+    .single()
+  if (teamError) return { error: teamError.message }
+
+  const { error: memberError } = await admin
+    .from("team_members")
+    .insert({ team_id: team.id, user_id: user.id, role: "owner" })
+  if (memberError) return { error: memberError.message }
+
+  const workspaceSlug = `${slugify(workspaceName) || "workspace"}-${Math.random().toString(36).slice(2, 6)}`
+  const { data: workspace, error: workspaceError } = await admin
+    .from("workspaces")
+    .insert({ team_id: team.id, name: workspaceName, slug: workspaceSlug })
+    .select("id")
+    .single()
+  if (workspaceError) return { error: workspaceError.message }
+
+  return { data: { workspaceId: workspace.id } }
+}
+
 export async function updateWorkspace(
   id: string,
   name: string

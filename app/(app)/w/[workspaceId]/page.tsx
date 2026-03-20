@@ -26,6 +26,7 @@ export default async function WorkspacePage({ params }: Props) {
     .order("created_at")
 
   return (
+    <div className="p-6 h-full overflow-y-auto">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">
@@ -48,6 +49,7 @@ export default async function WorkspacePage({ params }: Props) {
           </p>
         </div>
       )}
+    </div>
     </div>
   )
 }
