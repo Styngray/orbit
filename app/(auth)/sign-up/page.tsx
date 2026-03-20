@@ -9,12 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function SignUpPage() {
-  const [state, action, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) => {
-      return await signUp(formData) ?? null
-    },
-    null
-  )
+  const [state, action, pending] = useActionState(signUp, null)
 
   return (
     <Card>

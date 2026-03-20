@@ -4,7 +4,10 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { sendWelcomeEmail } from "@/lib/email"
 
-export async function signUp(formData: FormData) {
+export async function signUp(
+  _prevState: { error?: string } | null,
+  formData: FormData
+) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
   const name = formData.get("name") as string
@@ -30,7 +33,10 @@ export async function signUp(formData: FormData) {
   redirect("/sign-in?message=Check your email to confirm your account")
 }
 
-export async function signIn(formData: FormData) {
+export async function signIn(
+  _prevState: { error?: string } | null,
+  formData: FormData
+) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 

@@ -20,12 +20,7 @@ function SignInForm() {
   const searchParams = useSearchParams()
   const message = searchParams.get("message")
 
-  const [state, action, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) => {
-      return (await signIn(formData)) ?? null
-    },
-    null
-  )
+  const [state, action, pending] = useActionState(signIn, null)
 
   return (
     <Card>

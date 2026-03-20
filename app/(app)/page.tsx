@@ -1,22 +1,18 @@
+import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 
-export default async function DashboardPage() {
+export default async function AppPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
 
-  const name = user?.user_metadata?.full_name ?? user?.email?.split("@")[0]
+  const { data: workspaces } = await supabase
+    .from("workspaces")
+    .select("id")
+    .order("created_at")
+    .limit(1)
 
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold tracking-tight">
-        Welcome back{name ? `, ${name}` : ""}
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Your workspaces and boards will appear here. Set up your team to get
-        started.
-      </p>
-    </div>
-  )
+  if (!workspaces || workspaces.length === 0) {
+    redirect("/onboarding")
+  }
+
+  redirect(`/w/${workspaces[0].id}`)
 }
