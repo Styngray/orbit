@@ -18,11 +18,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { cn } from "@/lib/utils"
 import { StatusIcon } from "./status-icon"
 import { PriorityIcon } from "./priority-icon"
+import { LabelSelector } from "./label-selector"
 import { STATUSES, PRIORITIES, type TaskStatus, type TaskPriority } from "@/lib/kanban-constants"
-import { LABELS } from "@/lib/label-constants"
+import type { CustomLabel } from "@/lib/label-constants"
 import { ChevronDown } from "lucide-react"
 
 interface Member {
@@ -39,6 +39,9 @@ interface NewIssueDialogProps {
   onOpenChange: (open: boolean) => void
   defaultStatus: TaskStatus
   members: Member[]
+  workspaceId: string
+  customLabels: CustomLabel[]
+  onLabelCreated: (label: CustomLabel) => void
   onSubmit: (data: {
     title: string
     description: string | null
@@ -55,6 +58,9 @@ export function NewIssueDialog({
   onOpenChange,
   defaultStatus,
   members,
+  workspaceId,
+  customLabels,
+  onLabelCreated,
   onSubmit,
 }: NewIssueDialogProps) {
   const [title, setTitle] = useState("")
@@ -78,12 +84,6 @@ export function NewIssueDialog({
       setSelectedLabels([])
     }
     onOpenChange(nextOpen)
-  }
-
-  function toggleLabel(value: string) {
-    setSelectedLabels((prev) =>
-      prev.includes(value) ? prev.filter((l) => l !== value) : [...prev, value]
-    )
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -113,7 +113,7 @@ export function NewIssueDialog({
       <DialogContent className="sm:max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>New Issue</DialogTitle>
+            <DialogTitle>New Task</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -121,7 +121,7 @@ export function NewIssueDialog({
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Title</label>
               <Input
-                placeholder="Issue title..."
+                placeholder="Task title..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 autoFocus
@@ -248,27 +248,13 @@ export function NewIssueDialog({
             {/* Labels */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Labels</label>
-              <div className="flex flex-wrap gap-2">
-                {LABELS.map((label) => {
-                  const active = selectedLabels.includes(label.value)
-                  return (
-                    <button
-                      key={label.value}
-                      type="button"
-                      onClick={() => toggleLabel(label.value)}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border transition-colors",
-                        active
-                          ? "border-transparent bg-accent"
-                          : "border-border bg-transparent hover:bg-accent/50"
-                      )}
-                    >
-                      <span className={cn("size-1.5 rounded-full", label.dot)} />
-                      <span className={label.text}>{label.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
+              <LabelSelector
+                selected={selectedLabels}
+                onChange={setSelectedLabels}
+                workspaceId={workspaceId}
+                customLabels={customLabels}
+                onLabelCreated={onLabelCreated}
+              />
             </div>
           </div>
 
@@ -277,7 +263,7 @@ export function NewIssueDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={loading || !title.trim()}>
-              {loading ? "Creating\u2026" : "Create issue"}
+              {loading ? "Creating\u2026" : "Create task"}
             </Button>
           </DialogFooter>
         </form>

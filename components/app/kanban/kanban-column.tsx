@@ -7,6 +7,7 @@ import { StatusIcon } from "./status-icon"
 import { KanbanTaskCard } from "./kanban-task-card"
 import type { Task } from "@/lib/actions/tasks"
 import type { TaskStatus } from "@/lib/kanban-constants"
+import type { CustomLabel } from "@/lib/label-constants"
 
 interface Member {
   user_id: string
@@ -23,6 +24,7 @@ interface KanbanColumnProps {
   color: string
   tasks: Task[]
   members: Member[]
+  customLabels: CustomLabel[]
   onAddTask: (status: TaskStatus) => void
   onTaskClick: (task: Task) => void
 }
@@ -32,6 +34,7 @@ export function KanbanColumn({
   label,
   tasks,
   members,
+  customLabels,
   onAddTask,
   onTaskClick,
 }: KanbanColumnProps) {
@@ -62,7 +65,13 @@ export function KanbanColumn({
       >
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <KanbanTaskCard key={task.id} task={task} members={members} onClick={onTaskClick} />
+            <KanbanTaskCard
+              key={task.id}
+              task={task}
+              members={members}
+              customLabels={customLabels}
+              onClick={onTaskClick}
+            />
           ))}
         </SortableContext>
       </div>

@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities"
 import { cn } from "@/lib/utils"
 import { PriorityIcon } from "./priority-icon"
 import { TaskAssigneeAvatar } from "./task-assignee-avatar"
-import { LABELS } from "@/lib/label-constants"
+import { getLabelDisplay, type CustomLabel } from "@/lib/label-constants"
 import type { Task } from "@/lib/actions/tasks"
 
 interface Member {
@@ -20,10 +20,11 @@ interface Member {
 interface KanbanTaskCardProps {
   task: Task
   members: Member[]
+  customLabels: CustomLabel[]
   onClick: (task: Task) => void
 }
 
-export function KanbanTaskCard({ task, members, onClick }: KanbanTaskCardProps) {
+export function KanbanTaskCard({ task, members, customLabels, onClick }: KanbanTaskCardProps) {
   const {
     attributes,
     listeners,
@@ -39,7 +40,12 @@ export function KanbanTaskCard({ task, members, onClick }: KanbanTaskCardProps) 
     opacity: isDragging ? 0.4 : 1,
   }
 
-  const taskLabels = LABELS.filter((l) => task.labels?.includes(l.value))
+  const taskLabels = (task.labels ?? [])
+    .map((value) => {
+      const display = getLabelDisplay(value, customLabels)
+      return display ? { value, ...display } : null
+    })
+    .filter((l): l is NonNullable<typeof l> => l !== null)
 
   return (
     <div

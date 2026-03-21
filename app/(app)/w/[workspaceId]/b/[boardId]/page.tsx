@@ -18,7 +18,7 @@ export default async function BoardPage({ params }: Props) {
 
   if (!workspace) notFound()
 
-  const [{ data: board }, { data: tasks }, { data: members }] =
+  const [{ data: board }, { data: tasks }, { data: members }, { data: customLabels }] =
     await Promise.all([
       supabase
         .from("boards")
@@ -36,6 +36,11 @@ export default async function BoardPage({ params }: Props) {
         .from("team_members")
         .select("user_id, profiles(id, display_name, avatar_url)")
         .eq("team_id", workspace.team_id),
+      supabase
+        .from("labels")
+        .select("id, name, color")
+        .eq("workspace_id", workspaceId)
+        .order("created_at"),
     ])
 
   if (!board) notFound()
@@ -53,6 +58,7 @@ export default async function BoardPage({ params }: Props) {
       boardId={boardId}
       workspaceId={workspaceId}
       boardName={board.name}
+      customLabels={(customLabels ?? []) as import("@/lib/label-constants").CustomLabel[]}
     />
   )
 }

@@ -24,6 +24,7 @@ import { createTask, reorderTask } from "@/lib/actions/tasks"
 import { STATUSES, type TaskStatus } from "@/lib/kanban-constants"
 import type { Task } from "@/lib/actions/tasks"
 import type { TaskPriority } from "@/lib/kanban-constants"
+import type { CustomLabel } from "@/lib/label-constants"
 
 type ViewMode = "board" | "list"
 
@@ -42,6 +43,7 @@ interface KanbanBoardProps {
   boardId: string
   workspaceId: string
   boardName: string
+  customLabels: CustomLabel[]
 }
 
 type OptimisticAction =
@@ -75,6 +77,7 @@ export function KanbanBoard({
   boardId,
   workspaceId,
   boardName,
+  customLabels,
 }: KanbanBoardProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -85,6 +88,13 @@ export function KanbanBoard({
     initialTasks,
     applyOptimistic
   )
+
+  // Local custom labels state so newly created labels appear immediately
+  const [localCustomLabels, setLocalCustomLabels] = useState<CustomLabel[]>(customLabels)
+
+  function handleLabelCreated(label: CustomLabel) {
+    setLocalCustomLabels((prev) => [...prev, label])
+  }
 
   // New issue dialog
   const [newIssueOpen, setNewIssueOpen] = useState(false)
@@ -252,7 +262,7 @@ export function KanbanBoard({
             List
           </button>
           <span className="ml-3 text-sm text-muted-foreground">
-            {totalCount} {totalCount === 1 ? "issue" : "issues"}
+            {totalCount} {totalCount === 1 ? "task" : "tasks"}
           </span>
         </div>
 
@@ -261,6 +271,7 @@ export function KanbanBoard({
           <KanbanList
             tasks={optimisticTasks}
             members={members}
+            customLabels={localCustomLabels}
             onTaskClick={openTask}
           />
         ) : (
@@ -283,6 +294,7 @@ export function KanbanBoard({
                     color={statusConfig.color}
                     tasks={columnTasks}
                     members={members}
+                    customLabels={localCustomLabels}
                     onAddTask={openNewIssue}
                     onTaskClick={openTask}
                   />
@@ -298,6 +310,9 @@ export function KanbanBoard({
           onOpenChange={setNewIssueOpen}
           defaultStatus={newIssueStatus}
           members={members}
+          workspaceId={workspaceId}
+          customLabels={localCustomLabels}
+          onLabelCreated={handleLabelCreated}
           onSubmit={handleCreateIssue}
         />
 
@@ -306,6 +321,8 @@ export function KanbanBoard({
           task={activeTask}
           members={members}
           workspaceId={workspaceId}
+          customLabels={localCustomLabels}
+          onLabelCreated={handleLabelCreated}
           onClose={() => setActiveTaskId(null)}
           onDelete={handleTaskDelete}
           onUpdate={handleTaskUpdate}

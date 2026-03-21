@@ -37,13 +37,14 @@ import { cn } from "@/lib/utils"
 import { updateTask, deleteTask } from "@/lib/actions/tasks"
 import { StatusIcon } from "./status-icon"
 import { PriorityIcon } from "./priority-icon"
+import { LabelSelector } from "./label-selector"
 import {
   STATUSES,
   PRIORITIES,
   type TaskStatus,
   type TaskPriority,
 } from "@/lib/kanban-constants"
-import { LABELS } from "@/lib/label-constants"
+import type { CustomLabel } from "@/lib/label-constants"
 import type { Task } from "@/lib/actions/tasks"
 
 interface Member {
@@ -59,6 +60,8 @@ interface TaskSheetProps {
   task: Task | null
   members: Member[]
   workspaceId: string
+  customLabels: CustomLabel[]
+  onLabelCreated: (label: CustomLabel) => void
   onClose: () => void
   onDelete: (taskId: string) => void
   onUpdate: (taskId: string, patch: Partial<Task>) => void
@@ -68,9 +71,9 @@ interface TaskSheetProps {
 
 function PropRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center min-h-9 gap-4">
-      <span className="w-20 shrink-0 text-sm text-muted-foreground">{label}</span>
-      {children}
+    <div className="flex items-start min-h-9 gap-4">
+      <span className="w-20 shrink-0 text-sm text-muted-foreground pt-1">{label}</span>
+      <div className="flex-1 min-w-0">{children}</div>
     </div>
   )
 }
@@ -81,6 +84,8 @@ function TaskSheetContent({
   task,
   members,
   workspaceId,
+  customLabels,
+  onLabelCreated,
   onClose,
   onDelete,
   onUpdate,
@@ -88,6 +93,8 @@ function TaskSheetContent({
   task: Task
   members: Member[]
   workspaceId: string
+  customLabels: CustomLabel[]
+  onLabelCreated: (label: CustomLabel) => void
   onClose: () => void
   onDelete: (taskId: string) => void
   onUpdate: (taskId: string, patch: Partial<Task>) => void
@@ -286,31 +293,13 @@ function TaskSheetContent({
 
         {/* Labels */}
         <PropRow label="Labels">
-          <div className="flex flex-wrap gap-1.5 py-0.5">
-            {LABELS.map((label) => {
-              const active = task.labels?.includes(label.value)
-              return (
-                <button
-                  key={label.value}
-                  type="button"
-                  onClick={() => {
-                    const current = task.labels ?? []
-                    const next = active
-                      ? current.filter((l) => l !== label.value)
-                      : [...current, label.value]
-                    handleLabelsChange(next)
-                  }}
-                  className={cn(
-                    "inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 border transition-colors",
-                    active ? "border-transparent bg-accent" : "border-border hover:bg-accent/50"
-                  )}
-                >
-                  <span className={cn("size-1.5 rounded-full", label.dot)} />
-                  <span className={label.text}>{label.label}</span>
-                </button>
-              )
-            })}
-          </div>
+          <LabelSelector
+            selected={task.labels ?? []}
+            onChange={handleLabelsChange}
+            workspaceId={workspaceId}
+            customLabels={customLabels}
+            onLabelCreated={onLabelCreated}
+          />
         </PropRow>
       </div>
 
@@ -370,6 +359,8 @@ export function TaskSheet({
   task,
   members,
   workspaceId,
+  customLabels,
+  onLabelCreated,
   onClose,
   onDelete,
   onUpdate,
@@ -396,6 +387,8 @@ export function TaskSheet({
             task={task}
             members={members}
             workspaceId={workspaceId}
+            customLabels={customLabels}
+            onLabelCreated={onLabelCreated}
             onClose={() => handleOpenChange(false)}
             onDelete={onDelete}
             onUpdate={onUpdate}
