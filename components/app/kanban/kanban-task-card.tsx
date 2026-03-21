@@ -2,8 +2,11 @@
 
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { TaskPriorityBadge } from "./task-priority-badge"
+import { Calendar } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { PriorityIcon } from "./priority-icon"
 import { TaskAssigneeAvatar } from "./task-assignee-avatar"
+import { getLabelDisplay, type CustomLabel } from "@/lib/label-constants"
 import type { Task } from "@/lib/actions/tasks"
 
 interface Member {
@@ -18,10 +21,11 @@ interface Member {
 interface KanbanTaskCardProps {
   task: Task
   members: Member[]
+  customLabels: CustomLabel[]
   onClick: (task: Task) => void
 }
 
-export function KanbanTaskCard({ task, members, onClick }: KanbanTaskCardProps) {
+export function KanbanTaskCard({ task, members, customLabels, onClick }: KanbanTaskCardProps) {
   const {
     attributes,
     listeners,
@@ -37,18 +41,47 @@ export function KanbanTaskCard({ task, members, onClick }: KanbanTaskCardProps) 
     opacity: isDragging ? 0.4 : 1,
   }
 
+  const taskLabels = (task.labels ?? [])
+    .map((value) => {
+      const display = getLabelDisplay(value, customLabels)
+      return display ? { value, ...display } : null
+    })
+    .filter((l): l is NonNullable<typeof l> => l !== null)
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
+      suppressHydrationWarning
       onClick={() => onClick(task)}
-      className="group cursor-pointer rounded-md border bg-card p-3 shadow-sm hover:shadow-md transition-shadow text-sm select-none"
+      className="cursor-pointer rounded-md border bg-card p-3 shadow-sm hover:shadow-md transition-shadow text-sm select-none"
     >
-      <p className="font-medium leading-snug mb-2">{task.title}</p>
+      <p className="leading-snug mb-2 text-[13px]">{task.title}</p>
+      {taskLabels.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {taskLabels.map((label) => (
+            <span
+              key={label.value}
+              className={cn("inline-flex items-center gap-1 text-[11px]", label.text)}
+            >
+              <span className={cn("size-1.5 rounded-full", label.dot)} />
+              {label.label}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2">
-        <TaskPriorityBadge priority={task.priority} />
+        <div className="flex items-center gap-2">
+          <PriorityIcon priority={task.priority} />
+          {task.due_date && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Calendar className="size-3" />
+              {new Date(task.due_date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+          )}
+        </div>
         <TaskAssigneeAvatar assigneeId={task.assignee_id} members={members} />
       </div>
     </div>

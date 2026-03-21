@@ -1,6 +1,8 @@
 "use client"
 
+import { Suspense } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { useActionState } from "react"
 import { signUp } from "@/lib/actions/auth"
 import { Button } from "@/components/ui/button"
@@ -8,7 +10,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function SignUpPage() {
+function SignUpForm() {
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirectTo") ?? ""
+
   const [state, action, pending] = useActionState(signUp, null)
 
   return (
@@ -22,6 +27,7 @@ export default function SignUpPage() {
       </CardHeader>
       <CardContent>
         <form action={action} className="space-y-4">
+          {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
           <div className="space-y-1.5">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -71,5 +77,13 @@ export default function SignUpPage() {
         </p>
       </CardContent>
     </Card>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpForm />
+    </Suspense>
   )
 }

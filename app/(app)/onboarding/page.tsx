@@ -1,107 +1,114 @@
-"use client"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { redirect } from "next/navigation"
 import { createTeamAndWorkspace } from "@/lib/actions/teams"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
 
-export default function OnboardingPage() {
-  const router = useRouter()
-  const [step, setStep] = useState(1)
-  const [teamName, setTeamName] = useState("")
-  const [workspaceName, setWorkspaceName] = useState("My Workspace")
-  const [loading, setLoading] = useState(false)
+interface Props {
+  searchParams: Promise<{ step?: string; team?: string; error?: string }>
+}
 
-  function handleTeamStep(e: React.FormEvent) {
-    e.preventDefault()
-    if (!teamName.trim()) return
-    setStep(2)
+export default async function OnboardingPage({ searchParams }: Props) {
+  const { step, team, error } = await searchParams
+
+  async function goToWorkspaceStep(formData: FormData) {
+    "use server"
+    const teamName = (formData.get("teamName") as string)?.trim()
+    if (!teamName) return
+    redirect(`/onboarding?step=2&team=${encodeURIComponent(teamName)}`)
   }
 
-  async function handleCreateWorkspace(e: React.FormEvent) {
-    e.preventDefault()
-    if (!teamName.trim() || !workspaceName.trim()) return
-    setLoading(true)
-    const result = await createTeamAndWorkspace(teamName.trim(), workspaceName.trim())
-    setLoading(false)
+  async function createWorkspace(formData: FormData) {
+    "use server"
+    const teamName = (formData.get("teamName") as string)?.trim()
+    const workspaceName = (formData.get("workspaceName") as string)?.trim()
+    if (!teamName || !workspaceName) return
+
+    const result = await createTeamAndWorkspace(teamName, workspaceName)
+
     if (result.error) {
-      toast.error(result.error)
-      return
+      const params = new URLSearchParams({
+        step: "2",
+        team: teamName,
+        error: result.error,
+      })
+      redirect(`/onboarding?${params}`)
     }
-    router.push(`/w/${result.data!.workspaceId}`)
+
+    redirect(`/w/${result.data!.workspaceId}`)
   }
+
+  const isStep2 = step === "2" && !!team
 
   return (
     <div className="p-6 h-full overflow-y-auto">
-    <div className="flex min-h-full items-center justify-center py-12">
-      <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-sm">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className={step >= 1 ? "text-foreground font-medium" : ""}>
-            Team
-          </span>
-          <span>→</span>
-          <span className={step >= 2 ? "text-foreground font-medium" : ""}>
-            Workspace
-          </span>
+      <div className="flex min-h-full items-center justify-center py-12">
+        <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className={!isStep2 ? "text-foreground font-medium" : ""}>
+              Team
+            </span>
+            <span>→</span>
+            <span className={isStep2 ? "text-foreground font-medium" : ""}>
+              Workspace
+            </span>
+          </div>
+
+          {!isStep2 ? (
+            <form action={goToWorkspaceStep} className="space-y-4">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  Name your team
+                </h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Your team is where your workspaces and boards live.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="team-name">Team name</Label>
+                <Input
+                  id="team-name"
+                  name="teamName"
+                  placeholder="Acme Inc."
+                  required
+                  autoFocus
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                Continue
+              </Button>
+            </form>
+          ) : (
+            <form action={createWorkspace} className="space-y-4">
+              <input type="hidden" name="teamName" value={team} />
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  Create your first workspace
+                </h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Workspaces help you organize boards by project or team.
+                </p>
+              </div>
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="workspace-name">Workspace name</Label>
+                <Input
+                  id="workspace-name"
+                  name="workspaceName"
+                  defaultValue="My Workspace"
+                  required
+                  autoFocus
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                Create workspace
+              </Button>
+            </form>
+          )}
         </div>
-
-        {step === 1 && (
-          <form onSubmit={handleTeamStep} className="space-y-4">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                Name your team
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Your team is where your workspaces and boards live.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="team-name">Team name</Label>
-              <Input
-                id="team-name"
-                placeholder="Acme Inc."
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                autoFocus
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating…" : "Continue"}
-            </Button>
-          </form>
-        )}
-
-        {step === 2 && (
-          <form onSubmit={handleCreateWorkspace} className="space-y-4">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                Create your first workspace
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Workspaces help you organize boards by project or team.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="workspace-name">Workspace name</Label>
-              <Input
-                id="workspace-name"
-                value={workspaceName}
-                onChange={(e) => setWorkspaceName(e.target.value)}
-                autoFocus
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating…" : "Create workspace"}
-            </Button>
-          </form>
-        )}
       </div>
-    </div>
     </div>
   )
 }

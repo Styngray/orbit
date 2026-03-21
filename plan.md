@@ -7,7 +7,7 @@
 | 1 | Foundation & Auth | ✅ Complete | supabase |
 | 2 | Onboarding & Workspaces | ✅ Complete | supabase |
 | 3 | Kanban & Tasks | ✅ Complete | milestone/3-kanban |
-| 4 | Team & User Management | 🔲 Not started | milestone/4-team-mgmt |
+| 4 | Team & User Management | ✅ Complete | milestone/4-team-mgmt |
 | 5 | Payments (Stripe) | 🔲 Not started | milestone/5-payments |
 | 6 | AI Features | 🔲 Not started | milestone/6-ai |
 
@@ -50,11 +50,11 @@
 ## Milestone 4: Team & User Management
 **Goal:** Teams can manage members and roles
 
-- [ ] Invite members by email
-- [ ] Roles: Owner, Admin, Member
-- [ ] Member management page
-- [ ] User profile settings
-- [ ] Team settings page
+- [x] Invite members by email
+- [x] Roles: Owner, Admin, Member
+- [x] Member management page
+- [x] User profile settings
+- [x] Team settings page
 
 ---
 

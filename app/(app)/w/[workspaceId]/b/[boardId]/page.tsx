@@ -18,7 +18,7 @@ export default async function BoardPage({ params }: Props) {
 
   if (!workspace) notFound()
 
-  const [{ data: board }, { data: tasks }, { data: members }] =
+  const [{ data: board }, { data: tasks }, { data: memberRows }, { data: customLabels }] =
     await Promise.all([
       supabase
         .from("boards")
@@ -28,22 +28,34 @@ export default async function BoardPage({ params }: Props) {
       supabase
         .from("tasks")
         .select(
-          "id, board_id, title, description, status, priority, sort_order, assignee_id, created_at"
+          "id, board_id, title, description, status, priority, sort_order, assignee_id, due_date, labels, created_at"
         )
         .eq("board_id", boardId)
         .order("sort_order"),
       supabase
         .from("team_members")
-        .select("user_id, profiles(id, display_name, avatar_url)")
+        .select("user_id")
         .eq("team_id", workspace.team_id),
+      supabase
+        .from("labels")
+        .select("id, name, color")
+        .eq("workspace_id", workspaceId)
+        .order("created_at"),
     ])
 
   if (!board) notFound()
 
-  // Normalize members: Supabase returns profiles as array from join
-  const normalizedMembers = (members ?? []).map((m) => ({
+  const userIds = (memberRows ?? []).map((m) => m.user_id)
+  const { data: profileRows } = userIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .in("id", userIds)
+    : { data: [] }
+
+  const normalizedMembers = (memberRows ?? []).map((m) => ({
     user_id: m.user_id,
-    profiles: Array.isArray(m.profiles) ? (m.profiles[0] ?? null) : m.profiles,
+    profiles: (profileRows ?? []).find((p) => p.id === m.user_id) ?? null,
   }))
 
   return (
@@ -53,6 +65,7 @@ export default async function BoardPage({ params }: Props) {
       boardId={boardId}
       workspaceId={workspaceId}
       boardName={board.name}
+      customLabels={(customLabels ?? []) as import("@/lib/label-constants").CustomLabel[]}
     />
   )
 }
