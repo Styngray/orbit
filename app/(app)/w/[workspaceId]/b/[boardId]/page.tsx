@@ -28,7 +28,7 @@ export default async function BoardPage({ params }: Props) {
       supabase
         .from("tasks")
         .select(
-          "id, board_id, title, description, status, priority, sort_order, assignee_id, created_at"
+          "id, board_id, title, description, status, priority, sort_order, assignee_id, due_date, labels, created_at"
         )
         .eq("board_id", boardId)
         .order("sort_order"),

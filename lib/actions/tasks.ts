@@ -13,13 +13,23 @@ export interface Task {
   priority: TaskPriority
   assignee_id: string | null
   sort_order: number
+  due_date: string | null
+  labels: string[]
   created_at: string
 }
 
 export async function createTask(
   boardId: string,
   workspaceId: string,
-  input: { title: string; status?: TaskStatus }
+  input: {
+    title: string
+    status?: TaskStatus
+    description?: string | null
+    priority?: TaskPriority
+    assignee_id?: string | null
+    due_date?: string | null
+    labels?: string[]
+  }
 ): Promise<{ data?: Task; error?: string }> {
   const supabase = await createClient()
 
@@ -42,8 +52,13 @@ export async function createTask(
       title: input.title,
       status: input.status ?? "backlog",
       sort_order: sortOrder,
+      ...(input.description !== undefined && { description: input.description }),
+      ...(input.priority !== undefined && { priority: input.priority }),
+      ...(input.assignee_id !== undefined && { assignee_id: input.assignee_id }),
+      ...(input.due_date !== undefined && { due_date: input.due_date }),
+      ...(input.labels !== undefined && { labels: input.labels }),
     })
-    .select("id, board_id, title, description, status, priority, assignee_id, sort_order, created_at")
+    .select("id, board_id, title, description, status, priority, assignee_id, sort_order, due_date, labels, created_at")
     .single()
 
   if (error) return { error: error.message }
@@ -61,6 +76,8 @@ export async function updateTask(
     status: TaskStatus
     priority: TaskPriority
     assignee_id: string | null
+    due_date: string | null
+    labels: string[]
   }>
 ): Promise<{ error?: string }> {
   const supabase = await createClient()

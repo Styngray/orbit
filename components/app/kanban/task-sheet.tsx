@@ -2,11 +2,14 @@
 
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Trash2 } from "lucide-react"
+import {
+  Trash2,
+  Calendar,
+  ChevronDown,
+} from "lucide-react"
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
 import {
@@ -20,23 +23,27 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 import { updateTask, deleteTask } from "@/lib/actions/tasks"
+import { StatusIcon } from "./status-icon"
+import { PriorityIcon } from "./priority-icon"
 import {
   STATUSES,
   PRIORITIES,
   type TaskStatus,
   type TaskPriority,
 } from "@/lib/kanban-constants"
+import { LABELS } from "@/lib/label-constants"
 import type { Task } from "@/lib/actions/tasks"
 
 interface Member {
@@ -57,7 +64,19 @@ interface TaskSheetProps {
   onUpdate: (taskId: string, patch: Partial<Task>) => void
 }
 
-// Inner component keyed by task.id so state resets automatically on task change
+// ── Property row ──────────────────────────────────────────────────────────────
+
+function PropRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center min-h-9 gap-4">
+      <span className="w-20 shrink-0 text-sm text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  )
+}
+
+// ── Inner content (keyed by task.id so state resets on task change) ───────────
+
 function TaskSheetContent({
   task,
   members,
@@ -77,14 +96,12 @@ function TaskSheetContent({
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description ?? "")
+  const [dueDate, setDueDate] = useState(task.due_date ?? "")
 
   async function handleTitleBlur() {
     if (title === task.title) return
     const trimmed = title.trim()
-    if (!trimmed) {
-      setTitle(task.title)
-      return
-    }
+    if (!trimmed) { setTitle(task.title); return }
     onUpdate(task.id, { title: trimmed })
     const { error } = await updateTask(task.id, workspaceId, { title: trimmed })
     if (error) toast.error(error)
@@ -94,9 +111,15 @@ function TaskSheetContent({
     if (description === (task.description ?? "")) return
     const trimmed = description.trim() || null
     onUpdate(task.id, { description: trimmed })
-    const { error } = await updateTask(task.id, workspaceId, {
-      description: trimmed,
-    })
+    const { error } = await updateTask(task.id, workspaceId, { description: trimmed })
+    if (error) toast.error(error)
+  }
+
+  async function handleDueDateChange(value: string) {
+    const due_date = value || null
+    setDueDate(value)
+    onUpdate(task.id, { due_date })
+    const { error } = await updateTask(task.id, workspaceId, { due_date })
     if (error) toast.error(error)
   }
 
@@ -124,140 +147,206 @@ function TaskSheetContent({
 
   async function handleDelete() {
     const { error } = await deleteTask(task.id, workspaceId)
-    if (error) {
-      toast.error(error)
-    } else {
-      onDelete(task.id)
-      onClose()
-    }
+    if (error) { toast.error(error) }
+    else { onDelete(task.id); onClose() }
   }
 
-  return (
-    <>
-      {/* Title — must be first so it renders at the top of the sheet */}
-      <input
-        className="text-lg font-semibold bg-transparent border-none outline-none w-full"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onBlur={handleTitleBlur}
-        aria-label="Task title"
-      />
+  async function handleLabelsChange(labels: string[]) {
+    onUpdate(task.id, { labels })
+    const { error } = await updateTask(task.id, workspaceId, { labels })
+    if (error) toast.error(error)
+  }
 
-      <div className="flex flex-col gap-4">
+  const currentStatus = STATUSES.find((s) => s.value === task.status)
+  const currentPriority = PRIORITIES.find((p) => p.value === task.priority)
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Title row */}
+      <div className="flex items-start gap-3 px-6 pt-6 pb-5 pr-14">
+        <StatusIcon status={task.status} className="mt-0.5" />
+        <input
+          className="flex-1 text-[15px] font-medium bg-transparent border-none outline-none leading-snug resize-none"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={handleTitleBlur}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          aria-label="Task title"
+        />
+      </div>
+
+      {/* Properties */}
+      <div className="px-6 pb-2 space-y-0.5">
         {/* Status */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground w-20 shrink-0">
-            Status
-          </span>
-          <Select value={task.status} onValueChange={handleStatusChange}>
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
+        <PropRow label="Status">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="h-8 flex items-center gap-1.5 rounded-md px-2 text-sm hover:bg-accent transition-colors">
+                <StatusIcon status={task.status} />
+                <span>{currentStatus?.label}</span>
+                <ChevronDown className="size-3 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
               {STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
+                <DropdownMenuItem key={s.value} onSelect={() => handleStatusChange(s.value)}>
+                  <StatusIcon status={s.value} />
                   {s.label}
-                </SelectItem>
+                </DropdownMenuItem>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </PropRow>
 
         {/* Priority */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground w-20 shrink-0">
-            Priority
-          </span>
-          <Select value={task.priority} onValueChange={handlePriorityChange}>
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
+        <PropRow label="Priority">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="h-8 flex items-center gap-1.5 rounded-md px-2 text-sm hover:bg-accent transition-colors">
+                <PriorityIcon priority={task.priority} />
+                <span>{currentPriority?.label}</span>
+                <ChevronDown className="size-3 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
               {PRIORITIES.map((p) => (
-                <SelectItem key={p.value} value={p.value}>
+                <DropdownMenuItem key={p.value} onSelect={() => handlePriorityChange(p.value)}>
+                  <PriorityIcon priority={p.value} />
                   {p.label}
-                </SelectItem>
+                </DropdownMenuItem>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </PropRow>
 
         {/* Assignee */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground w-20 shrink-0">
-            Assignee
-          </span>
-          <Select
-            value={task.assignee_id ?? "unassigned"}
-            onValueChange={handleAssigneeChange}
-          >
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
+        <PropRow label="Assignee">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="h-8 flex items-center gap-1.5 rounded-md px-2 text-sm hover:bg-accent transition-colors">
+                {task.assignee_id ? (() => {
+                  const m = members.find((m) => m.user_id === task.assignee_id)
+                  if (!m?.profiles) return <span className="text-muted-foreground">Unassigned</span>
+                  const name = m.profiles.display_name ?? m.user_id
+                  const initials = name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+                  return (
+                    <>
+                      <Avatar className="size-4">
+                        <AvatarImage src={m.profiles.avatar_url ?? undefined} />
+                        <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
+                      </Avatar>
+                      <span>{name}</span>
+                    </>
+                  )
+                })() : <span className="text-muted-foreground">Unassigned</span>}
+                <ChevronDown className="size-3 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onSelect={() => handleAssigneeChange("unassigned")}>
+                Unassigned
+              </DropdownMenuItem>
               {members.map((m) => {
                 if (!m.profiles) return null
                 const name = m.profiles.display_name ?? m.user_id
-                const initials = name
-                  .split(" ")
-                  .map((n: string) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)
+                const initials = name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
                 return (
-                  <SelectItem key={m.user_id} value={m.user_id}>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="size-4">
-                        <AvatarImage
-                          src={m.profiles.avatar_url ?? undefined}
-                        />
-                        <AvatarFallback className="text-[8px]">
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      {name}
-                    </div>
-                  </SelectItem>
+                  <DropdownMenuItem key={m.user_id} onSelect={() => handleAssigneeChange(m.user_id)}>
+                    <Avatar className="size-4">
+                      <AvatarImage src={m.profiles.avatar_url ?? undefined} />
+                      <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
+                    </Avatar>
+                    {name}
+                  </DropdownMenuItem>
                 )
               })}
-            </SelectContent>
-          </Select>
-        </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </PropRow>
 
-        {/* Description */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted-foreground">Description</span>
-          <Textarea
-            placeholder="Add a description…"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            onBlur={handleDescriptionBlur}
-            className="min-h-[120px] resize-none text-sm"
-          />
-        </div>
+        {/* Due date */}
+        <PropRow label="Due date">
+          <div className="relative flex items-center">
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => handleDueDateChange(e.target.value)}
+              className={cn(
+                "h-8 rounded-md px-2 text-sm bg-transparent border-0 hover:bg-accent cursor-pointer",
+                "focus:outline-none focus:ring-0",
+                "[color-scheme:dark]",
+                !dueDate && "text-muted-foreground"
+              )}
+            />
+            {!dueDate && (
+              <Calendar className="pointer-events-none absolute right-2 size-3.5 text-muted-foreground" />
+            )}
+          </div>
+        </PropRow>
 
-        {/* Delete */}
-        <div className="mt-auto pt-4 border-t">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <Trash2 className="mr-2 size-4" />
-            Delete task
-          </Button>
-        </div>
+        {/* Labels */}
+        <PropRow label="Labels">
+          <div className="flex flex-wrap gap-1.5 py-0.5">
+            {LABELS.map((label) => {
+              const active = task.labels?.includes(label.value)
+              return (
+                <button
+                  key={label.value}
+                  type="button"
+                  onClick={() => {
+                    const current = task.labels ?? []
+                    const next = active
+                      ? current.filter((l) => l !== label.value)
+                      : [...current, label.value]
+                    handleLabelsChange(next)
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 border transition-colors",
+                    active ? "border-transparent bg-accent" : "border-border hover:bg-accent/50"
+                  )}
+                >
+                  <span className={cn("size-1.5 rounded-full", label.dot)} />
+                  <span className={label.text}>{label.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </PropRow>
+      </div>
+
+      <Separator className="my-4" />
+
+      {/* Description */}
+      <div className="px-6 flex-1 overflow-y-auto space-y-2 min-h-0">
+        <p className="text-sm text-muted-foreground">Description</p>
+        <Textarea
+          placeholder="Add a description…"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          onBlur={handleDescriptionBlur}
+          className="border-0 shadow-none px-3 py-2 resize-none text-sm min-h-[160px] focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/60"
+        />
+      </div>
+
+      {/* Footer */}
+      <div className="px-6 py-4 flex justify-end border-t">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+          onClick={() => setDeleteOpen(true)}
+        >
+          <Trash2 className="size-4" />
+          Delete issue
+        </Button>
       </div>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete task?</AlertDialogTitle>
+            <AlertDialogTitle>Delete issue?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete &quot;{task.title}&quot;. This cannot
-              be undone.
+              This will permanently delete &quot;{task.title}&quot;. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -271,10 +360,11 @@ function TaskSheetContent({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-    </>
+    </div>
   )
 }
+
+// ── Public component ──────────────────────────────────────────────────────────
 
 export function TaskSheet({
   task,
@@ -297,23 +387,19 @@ export function TaskSheet({
   }
 
   return (
-    <Sheet open={!!task} onOpenChange={handleOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col gap-4 overflow-y-auto">
+    <Sheet open={!!task} onOpenChange={handleOpenChange} modal={false}>
+      <SheetContent className="w-full sm:max-w-md p-0 gap-0 overflow-hidden flex flex-col">
+        <SheetTitle className="sr-only">Task details</SheetTitle>
         {task && (
-          <>
-            <SheetHeader>
-              <SheetTitle className="sr-only">Task details</SheetTitle>
-            </SheetHeader>
-            <TaskSheetContent
-              key={task.id}
-              task={task}
-              members={members}
-              workspaceId={workspaceId}
-              onClose={() => handleOpenChange(false)}
-              onDelete={onDelete}
-              onUpdate={onUpdate}
-            />
-          </>
+          <TaskSheetContent
+            key={task.id}
+            task={task}
+            members={members}
+            workspaceId={workspaceId}
+            onClose={() => handleOpenChange(false)}
+            onDelete={onDelete}
+            onUpdate={onUpdate}
+          />
         )}
       </SheetContent>
     </Sheet>

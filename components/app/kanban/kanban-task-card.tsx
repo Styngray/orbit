@@ -2,8 +2,10 @@
 
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { TaskPriorityBadge } from "./task-priority-badge"
+import { cn } from "@/lib/utils"
+import { PriorityIcon } from "./priority-icon"
 import { TaskAssigneeAvatar } from "./task-assignee-avatar"
+import { LABELS } from "@/lib/label-constants"
 import type { Task } from "@/lib/actions/tasks"
 
 interface Member {
@@ -37,6 +39,8 @@ export function KanbanTaskCard({ task, members, onClick }: KanbanTaskCardProps) 
     opacity: isDragging ? 0.4 : 1,
   }
 
+  const taskLabels = LABELS.filter((l) => task.labels?.includes(l.value))
+
   return (
     <div
       ref={setNodeRef}
@@ -44,11 +48,24 @@ export function KanbanTaskCard({ task, members, onClick }: KanbanTaskCardProps) 
       {...attributes}
       {...listeners}
       onClick={() => onClick(task)}
-      className="group cursor-pointer rounded-md border bg-card p-3 shadow-sm hover:shadow-md transition-shadow text-sm select-none"
+      className="cursor-pointer rounded-md border bg-card p-3 shadow-sm hover:shadow-md transition-shadow text-sm select-none"
     >
-      <p className="font-medium leading-snug mb-2">{task.title}</p>
+      <p className="leading-snug mb-2 text-[13px]">{task.title}</p>
+      {taskLabels.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {taskLabels.map((label) => (
+            <span
+              key={label.value}
+              className={cn("inline-flex items-center gap-1 text-[11px]", label.text)}
+            >
+              <span className={cn("size-1.5 rounded-full", label.dot)} />
+              {label.label}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2">
-        <TaskPriorityBadge priority={task.priority} />
+        <PriorityIcon priority={task.priority} />
         <TaskAssigneeAvatar assigneeId={task.assignee_id} members={members} />
       </div>
     </div>

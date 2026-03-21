@@ -1,16 +1,12 @@
 "use client"
 
 import { useDroppable } from "@dnd-kit/core"
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { Plus } from "lucide-react"
+import { StatusIcon } from "./status-icon"
 import { KanbanTaskCard } from "./kanban-task-card"
-import { QuickAddTask } from "./quick-add-task"
 import type { Task } from "@/lib/actions/tasks"
 import type { TaskStatus } from "@/lib/kanban-constants"
-
-type QuickAddState = "idle" | "editing" | "submitting"
 
 interface Member {
   user_id: string
@@ -27,21 +23,16 @@ interface KanbanColumnProps {
   color: string
   tasks: Task[]
   members: Member[]
-  quickAddState: QuickAddState
-  onQuickAddStateChange: (state: QuickAddState) => void
-  onQuickAdd: (title: string, status: TaskStatus) => Promise<void>
+  onAddTask: (status: TaskStatus) => void
   onTaskClick: (task: Task) => void
 }
 
 export function KanbanColumn({
   status,
   label,
-  color,
   tasks,
   members,
-  quickAddState,
-  onQuickAddStateChange,
-  onQuickAdd,
+  onAddTask,
   onTaskClick,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status })
@@ -49,12 +40,17 @@ export function KanbanColumn({
   return (
     <div className="flex flex-col w-72 shrink-0">
       {/* Column header */}
-      <div className="flex items-center gap-2 mb-3 px-1">
-        <span className={`size-2.5 rounded-full ${color}`} />
+      <div className="flex items-center gap-1.5 mb-3 px-1">
+        <StatusIcon status={status} className="size-3.5" />
         <span className="text-sm font-medium">{label}</span>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {tasks.length}
-        </span>
+        <span className="text-xs text-muted-foreground ml-1">{tasks.length}</span>
+        <button
+          onClick={() => onAddTask(status)}
+          className="ml-auto flex items-center justify-center size-5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+          aria-label={`Add task to ${label}`}
+        >
+          <Plus className="size-3.5" />
+        </button>
       </div>
 
       {/* Task list */}
@@ -64,30 +60,21 @@ export function KanbanColumn({
           isOver ? "bg-muted/50" : ""
         }`}
       >
-        <SortableContext
-          items={tasks.map((t) => t.id)}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <KanbanTaskCard
-              key={task.id}
-              task={task}
-              members={members}
-              onClick={onTaskClick}
-            />
+            <KanbanTaskCard key={task.id} task={task} members={members} onClick={onTaskClick} />
           ))}
         </SortableContext>
       </div>
 
-      {/* Quick add */}
-      <div className="mt-2">
-        <QuickAddTask
-          status={status}
-          state={quickAddState}
-          onStateChange={onQuickAddStateChange}
-          onSubmit={onQuickAdd}
-        />
-      </div>
+      {/* Add task button */}
+      <button
+        onClick={() => onAddTask(status)}
+        className="mt-2 flex items-center gap-1.5 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors w-full"
+      >
+        <Plus className="size-3.5" />
+        Add task
+      </button>
     </div>
   )
 }
