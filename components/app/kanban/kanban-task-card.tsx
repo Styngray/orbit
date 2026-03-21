@@ -2,6 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PriorityIcon } from "./priority-icon"
 import { TaskAssigneeAvatar } from "./task-assignee-avatar"
@@ -53,6 +54,7 @@ export function KanbanTaskCard({ task, members, customLabels, onClick }: KanbanT
       style={style}
       {...attributes}
       {...listeners}
+      suppressHydrationWarning
       onClick={() => onClick(task)}
       className="cursor-pointer rounded-md border bg-card p-3 shadow-sm hover:shadow-md transition-shadow text-sm select-none"
     >
@@ -71,7 +73,15 @@ export function KanbanTaskCard({ task, members, customLabels, onClick }: KanbanT
         </div>
       )}
       <div className="flex items-center justify-between gap-2">
-        <PriorityIcon priority={task.priority} />
+        <div className="flex items-center gap-2">
+          <PriorityIcon priority={task.priority} />
+          {task.due_date && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Calendar className="size-3" />
+              {new Date(task.due_date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+          )}
+        </div>
         <TaskAssigneeAvatar assigneeId={task.assignee_id} members={members} />
       </div>
     </div>

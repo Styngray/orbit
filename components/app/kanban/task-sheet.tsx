@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   Trash2,
-  Calendar,
   ChevronDown,
 } from "lucide-react"
 import {
@@ -34,7 +33,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { updateTask, deleteTask } from "@/lib/actions/tasks"
+import { deleteTask } from "@/lib/actions/tasks"
 import { StatusIcon } from "./status-icon"
 import { PriorityIcon } from "./priority-icon"
 import { LabelSelector } from "./label-selector"
@@ -62,6 +61,8 @@ interface TaskSheetProps {
   workspaceId: string
   customLabels: CustomLabel[]
   onLabelCreated: (label: CustomLabel) => void
+  onLabelUpdated?: (label: CustomLabel) => void
+  onLabelDeleted?: (id: string) => void
   onClose: () => void
   onDelete: (taskId: string) => void
   onUpdate: (taskId: string, patch: Partial<Task>) => void
@@ -86,6 +87,8 @@ function TaskSheetContent({
   workspaceId,
   customLabels,
   onLabelCreated,
+  onLabelUpdated,
+  onLabelDeleted,
   onClose,
   onDelete,
   onUpdate,
@@ -95,6 +98,8 @@ function TaskSheetContent({
   workspaceId: string
   customLabels: CustomLabel[]
   onLabelCreated: (label: CustomLabel) => void
+  onLabelUpdated?: (label: CustomLabel) => void
+  onLabelDeleted?: (id: string) => void
   onClose: () => void
   onDelete: (taskId: string) => void
   onUpdate: (taskId: string, patch: Partial<Task>) => void
@@ -105,51 +110,34 @@ function TaskSheetContent({
   const [description, setDescription] = useState(task.description ?? "")
   const [dueDate, setDueDate] = useState(task.due_date ?? "")
 
-  async function handleTitleBlur() {
+  function handleTitleBlur() {
     if (title === task.title) return
     const trimmed = title.trim()
     if (!trimmed) { setTitle(task.title); return }
     onUpdate(task.id, { title: trimmed })
-    const { error } = await updateTask(task.id, workspaceId, { title: trimmed })
-    if (error) toast.error(error)
   }
 
-  async function handleDescriptionBlur() {
+  function handleDescriptionBlur() {
     if (description === (task.description ?? "")) return
     const trimmed = description.trim() || null
     onUpdate(task.id, { description: trimmed })
-    const { error } = await updateTask(task.id, workspaceId, { description: trimmed })
-    if (error) toast.error(error)
   }
 
-  async function handleDueDateChange(value: string) {
-    const due_date = value || null
+  function handleDueDateChange(value: string) {
     setDueDate(value)
-    onUpdate(task.id, { due_date })
-    const { error } = await updateTask(task.id, workspaceId, { due_date })
-    if (error) toast.error(error)
+    onUpdate(task.id, { due_date: value || null })
   }
 
-  async function handleStatusChange(value: string) {
-    const status = value as TaskStatus
-    onUpdate(task.id, { status })
-    const { error } = await updateTask(task.id, workspaceId, { status })
-    if (error) toast.error(error)
-    else router.refresh()
+  function handleStatusChange(value: string) {
+    onUpdate(task.id, { status: value as TaskStatus })
   }
 
-  async function handlePriorityChange(value: string) {
-    const priority = value as TaskPriority
-    onUpdate(task.id, { priority })
-    const { error } = await updateTask(task.id, workspaceId, { priority })
-    if (error) toast.error(error)
+  function handlePriorityChange(value: string) {
+    onUpdate(task.id, { priority: value as TaskPriority })
   }
 
-  async function handleAssigneeChange(value: string) {
-    const assignee_id = value === "unassigned" ? null : value
-    onUpdate(task.id, { assignee_id })
-    const { error } = await updateTask(task.id, workspaceId, { assignee_id })
-    if (error) toast.error(error)
+  function handleAssigneeChange(value: string) {
+    onUpdate(task.id, { assignee_id: value === "unassigned" ? null : value })
   }
 
   async function handleDelete() {
@@ -158,10 +146,8 @@ function TaskSheetContent({
     else { onDelete(task.id); onClose() }
   }
 
-  async function handleLabelsChange(labels: string[]) {
+  function handleLabelsChange(labels: string[]) {
     onUpdate(task.id, { labels })
-    const { error } = await updateTask(task.id, workspaceId, { labels })
-    if (error) toast.error(error)
   }
 
   const currentStatus = STATUSES.find((s) => s.value === task.status)
@@ -285,9 +271,6 @@ function TaskSheetContent({
                 !dueDate && "text-muted-foreground"
               )}
             />
-            {!dueDate && (
-              <Calendar className="pointer-events-none absolute right-2 size-3.5 text-muted-foreground" />
-            )}
           </div>
         </PropRow>
 
@@ -299,6 +282,8 @@ function TaskSheetContent({
             workspaceId={workspaceId}
             customLabels={customLabels}
             onLabelCreated={onLabelCreated}
+            onLabelUpdated={onLabelUpdated}
+            onLabelDeleted={onLabelDeleted}
           />
         </PropRow>
       </div>
@@ -361,6 +346,8 @@ export function TaskSheet({
   workspaceId,
   customLabels,
   onLabelCreated,
+  onLabelUpdated,
+  onLabelDeleted,
   onClose,
   onDelete,
   onUpdate,
@@ -389,6 +376,8 @@ export function TaskSheet({
             workspaceId={workspaceId}
             customLabels={customLabels}
             onLabelCreated={onLabelCreated}
+            onLabelUpdated={onLabelUpdated}
+            onLabelDeleted={onLabelDeleted}
             onClose={() => handleOpenChange(false)}
             onDelete={onDelete}
             onUpdate={onUpdate}

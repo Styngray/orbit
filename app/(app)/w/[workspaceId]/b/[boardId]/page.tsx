@@ -18,7 +18,7 @@ export default async function BoardPage({ params }: Props) {
 
   if (!workspace) notFound()
 
-  const [{ data: board }, { data: tasks }, { data: members }, { data: customLabels }] =
+  const [{ data: board }, { data: tasks }, { data: memberRows }, { data: customLabels }] =
     await Promise.all([
       supabase
         .from("boards")
@@ -34,7 +34,7 @@ export default async function BoardPage({ params }: Props) {
         .order("sort_order"),
       supabase
         .from("team_members")
-        .select("user_id, profiles(id, display_name, avatar_url)")
+        .select("user_id")
         .eq("team_id", workspace.team_id),
       supabase
         .from("labels")
@@ -45,10 +45,17 @@ export default async function BoardPage({ params }: Props) {
 
   if (!board) notFound()
 
-  // Normalize members: Supabase returns profiles as array from join
-  const normalizedMembers = (members ?? []).map((m) => ({
+  const userIds = (memberRows ?? []).map((m) => m.user_id)
+  const { data: profileRows } = userIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .in("id", userIds)
+    : { data: [] }
+
+  const normalizedMembers = (memberRows ?? []).map((m) => ({
     user_id: m.user_id,
-    profiles: Array.isArray(m.profiles) ? (m.profiles[0] ?? null) : m.profiles,
+    profiles: (profileRows ?? []).find((p) => p.id === m.user_id) ?? null,
   }))
 
   return (

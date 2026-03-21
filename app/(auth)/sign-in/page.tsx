@@ -19,6 +19,7 @@ import {
 function SignInForm() {
   const searchParams = useSearchParams()
   const message = searchParams.get("message")
+  const redirectTo = searchParams.get("redirectTo") ?? ""
 
   const [state, action, pending] = useActionState(signIn, null)
 
@@ -38,6 +39,7 @@ function SignInForm() {
           </p>
         )}
         <form action={action} className="space-y-4">
+          {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -50,7 +52,15 @@ function SignInForm() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <Input
               id="password"
               name="password"
@@ -70,7 +80,7 @@ function SignInForm() {
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Link
-            href="/sign-up"
+            href={redirectTo ? `/sign-up?redirectTo=${encodeURIComponent(redirectTo)}` : "/sign-up"}
             className="text-foreground underline-offset-4 hover:underline"
           >
             Sign up

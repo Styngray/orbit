@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { updateWorkspace, deleteWorkspace } from "@/lib/actions/teams"
+import { updateWorkspace, updateTeam, deleteWorkspace } from "@/lib/actions/teams"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,22 +21,25 @@ import { toast } from "sonner"
 
 interface WorkspaceSettingsFormProps {
   workspace: { id: string; name: string; team_id: string }
+  team: { id: string; name: string }
   isOwner: boolean
 }
 
 export function WorkspaceSettingsForm({
   workspace,
+  team,
   isOwner,
 }: WorkspaceSettingsFormProps) {
   const router = useRouter()
-  const [name, setName] = useState(workspace.name)
+  const [wsName, setWsName] = useState(workspace.name)
+  const [teamName, setTeamName] = useState(team.name)
   const [loading, setLoading] = useState(false)
 
-  async function handleRename(e: React.FormEvent) {
+  async function handleRenameWorkspace(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim() || name === workspace.name) return
+    if (!wsName.trim() || wsName === workspace.name) return
     setLoading(true)
-    const { error } = await updateWorkspace(workspace.id, name.trim())
+    const { error } = await updateWorkspace(workspace.id, wsName.trim())
     setLoading(false)
     if (error) {
       toast.error(error)
@@ -46,38 +49,81 @@ export function WorkspaceSettingsForm({
     }
   }
 
-  async function handleDelete() {
+  async function handleRenameTeam(e: React.FormEvent) {
+    e.preventDefault()
+    if (!teamName.trim() || teamName === team.name) return
     setLoading(true)
-    const { error } = await deleteWorkspace(workspace.id)
+    const { error } = await updateTeam(team.id, teamName.trim())
     setLoading(false)
     if (error) {
       toast.error(error)
     } else {
-      router.push("/onboarding")
+      toast.success("Team renamed")
+      router.refresh()
+    }
+  }
+
+  async function handleDelete() {
+    setLoading(true)
+    const { data, error } = await deleteWorkspace(workspace.id)
+    setLoading(false)
+    if (error) {
+      toast.error(error)
+    } else {
+      router.push(data?.nextWorkspaceId ? `/w/${data.nextWorkspaceId}` : "/")
     }
   }
 
   return (
     <div className="space-y-8">
-      <form onSubmit={handleRename} className="space-y-4">
-        <h2 className="text-lg font-medium">General</h2>
+      {/* Team settings */}
+      <form onSubmit={handleRenameTeam} className="space-y-4">
+        <h2 className="text-lg font-medium">Team</h2>
+        <div className="space-y-2">
+          <Label htmlFor="team-name">Team name</Label>
+          <Input
+            id="team-name"
+            value={teamName}
+            onChange={(e) => setTeamName(e.target.value)}
+            disabled={!isOwner}
+          />
+          {!isOwner && (
+            <p className="text-xs text-muted-foreground">
+              Only the team owner can rename the team.
+            </p>
+          )}
+        </div>
+        {isOwner && (
+          <Button
+            type="submit"
+            disabled={loading || !teamName.trim() || teamName === team.name}
+          >
+            Save team name
+          </Button>
+        )}
+      </form>
+
+      {/* Workspace settings */}
+      <form onSubmit={handleRenameWorkspace} className="space-y-4 border-t pt-8">
+        <h2 className="text-lg font-medium">Workspace</h2>
         <div className="space-y-2">
           <Label htmlFor="ws-name">Workspace name</Label>
           <Input
             id="ws-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={wsName}
+            onChange={(e) => setWsName(e.target.value)}
             required
           />
         </div>
         <Button
           type="submit"
-          disabled={loading || name.trim() === workspace.name}
+          disabled={loading || !wsName.trim() || wsName === workspace.name}
         >
-          Save changes
+          Save workspace name
         </Button>
       </form>
 
+      {/* Danger zone */}
       {isOwner && (
         <div className="space-y-4 border-t pt-8">
           <h2 className="text-lg font-medium text-destructive">Danger zone</h2>

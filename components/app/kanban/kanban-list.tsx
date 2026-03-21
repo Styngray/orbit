@@ -61,8 +61,9 @@ export function KanbanList({ tasks, members, customLabels, onTaskClick }: Kanban
               onClick={() => onTaskClick(task)}
               className="flex items-center border-b px-4 py-2 hover:bg-muted/30 cursor-pointer group"
             >
-              <div className="flex-1 min-w-0">
-                <span className="text-sm truncate block">{task.title}</span>
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                <StatusIcon status={task.status} className="size-3.5 shrink-0" />
+                <span className="text-sm truncate">{task.title}</span>
               </div>
               <div className="w-28 shrink-0 flex items-center gap-1.5">
                 <PriorityIcon priority={task.priority} />

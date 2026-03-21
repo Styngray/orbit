@@ -67,18 +67,21 @@ export async function createTask(
   return { data: task as Task }
 }
 
+type TaskPatch = Partial<{
+  title: string
+  description: string | null
+  status: TaskStatus
+  priority: TaskPriority
+  assignee_id: string | null
+  due_date: string | null
+  labels: string[]
+}>
+
 export async function updateTask(
   id: string,
   workspaceId: string,
-  patch: Partial<{
-    title: string
-    description: string | null
-    status: TaskStatus
-    priority: TaskPriority
-    assignee_id: string | null
-    due_date: string | null
-    labels: string[]
-  }>
+  patch: TaskPatch,
+  boardId?: string
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
 
@@ -86,7 +89,11 @@ export async function updateTask(
 
   if (error) return { error: error.message }
 
-  revalidatePath(`/w/${workspaceId}`)
+  if (boardId) {
+    revalidatePath(`/w/${workspaceId}/b/${boardId}`)
+  } else {
+    revalidatePath(`/w/${workspaceId}`, "layout")
+  }
   return {}
 }
 

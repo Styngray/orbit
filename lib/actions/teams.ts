@@ -57,6 +57,7 @@ export async function createWorkspace(
 
   if (error) return { error: error.message }
 
+  revalidatePath("/", "layout")
   return { data: { workspaceId: workspace.id } }
 }
 
@@ -96,6 +97,23 @@ export async function createTeamAndWorkspace(
   return { data: { workspaceId: workspace.id } }
 }
 
+export async function updateTeam(
+  id: string,
+  name: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("teams")
+    .update({ name })
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/", "layout")
+  return {}
+}
+
 export async function updateWorkspace(
   id: string,
   name: string
@@ -113,13 +131,23 @@ export async function updateWorkspace(
   return {}
 }
 
-export async function deleteWorkspace(id: string): Promise<{ error?: string }> {
+export async function deleteWorkspace(
+  id: string
+): Promise<{ data?: { nextWorkspaceId?: string }; error?: string }> {
   const supabase = await createClient()
+
+  // Find another workspace before deleting
+  const { data: others } = await supabase
+    .from("workspaces")
+    .select("id")
+    .neq("id", id)
+    .order("created_at")
+    .limit(1)
 
   const { error } = await supabase.from("workspaces").delete().eq("id", id)
 
   if (error) return { error: error.message }
 
   revalidatePath("/", "layout")
-  return {}
+  return { data: { nextWorkspaceId: others?.[0]?.id } }
 }

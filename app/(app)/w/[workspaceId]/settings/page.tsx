@@ -22,23 +22,25 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
 
   if (!workspace) notFound()
 
-  const { data: membership } = await supabase
-    .from("team_members")
-    .select("role")
-    .eq("team_id", workspace.team_id)
-    .eq("user_id", user!.id)
-    .single()
+  const [{ data: team }, { data: membership }] = await Promise.all([
+    supabase.from("teams").select("id, name").eq("id", workspace.team_id).single(),
+    supabase
+      .from("team_members")
+      .select("role")
+      .eq("team_id", workspace.team_id)
+      .eq("user_id", user!.id)
+      .single(),
+  ])
 
   const isOwner = membership?.role === "owner"
 
   return (
-    <div className="p-6 h-full overflow-y-auto">
-    <div className="max-w-2xl space-y-8">
-      <h1 className="text-2xl font-semibold tracking-tight">
-        Workspace settings
-      </h1>
-      <WorkspaceSettingsForm workspace={workspace} isOwner={isOwner} />
-    </div>
+    <div className="space-y-8">
+      <WorkspaceSettingsForm
+        workspace={workspace}
+        team={team ?? { id: workspace.team_id, name: "" }}
+        isOwner={isOwner}
+      />
     </div>
   )
 }

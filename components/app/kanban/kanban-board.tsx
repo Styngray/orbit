@@ -20,7 +20,7 @@ import { KanbanColumn } from "./kanban-column"
 import { KanbanList } from "./kanban-list"
 import { TaskSheet } from "./task-sheet"
 import { NewIssueDialog } from "./new-issue-dialog"
-import { createTask, reorderTask } from "@/lib/actions/tasks"
+import { createTask, reorderTask, updateTask } from "@/lib/actions/tasks"
 import { STATUSES, type TaskStatus } from "@/lib/kanban-constants"
 import type { Task } from "@/lib/actions/tasks"
 import type { TaskPriority } from "@/lib/kanban-constants"
@@ -94,6 +94,14 @@ export function KanbanBoard({
 
   function handleLabelCreated(label: CustomLabel) {
     setLocalCustomLabels((prev) => [...prev, label])
+  }
+
+  function handleLabelUpdated(label: CustomLabel) {
+    setLocalCustomLabels((prev) => prev.map((l) => l.id === label.id ? label : l))
+  }
+
+  function handleLabelDeleted(id: string) {
+    setLocalCustomLabels((prev) => prev.filter((l) => l.id !== id))
   }
 
   // New issue dialog
@@ -219,8 +227,13 @@ export function KanbanBoard({
   }
 
   function handleTaskUpdate(taskId: string, patch: Partial<Task>) {
-    startTransition(() => {
+    // Strip non-DB fields before sending to server
+    const { id: _id, board_id: _bid, sort_order: _so, created_at: _ca, ...dbPatch } = patch as Task
+    startTransition(async () => {
       dispatchOptimistic({ type: "update", taskId, patch })
+      const { error } = await updateTask(taskId, workspaceId, dbPatch, boardId)
+      if (error) toast.error(error)
+      else router.refresh()
     })
   }
 
@@ -323,6 +336,8 @@ export function KanbanBoard({
           workspaceId={workspaceId}
           customLabels={localCustomLabels}
           onLabelCreated={handleLabelCreated}
+          onLabelUpdated={handleLabelUpdated}
+          onLabelDeleted={handleLabelDeleted}
           onClose={() => setActiveTaskId(null)}
           onDelete={handleTaskDelete}
           onUpdate={handleTaskUpdate}

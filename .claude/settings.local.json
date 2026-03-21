@@ -21,7 +21,14 @@
       "Bash(ls /c/Users/knytr/orbit/app/\\\\\\(app\\\\\\)/)",
       "Bash(ls /c/Users/knytr/orbit/app/\\\\\\(app\\\\\\)/onboarding/)",
       "Bash(ls /c/Users/knytr/orbit/app/\\\\\\(app\\\\\\)/w/[workspaceId]/)",
-      "Bash(find /c/Users/knytr/orbit/node_modules/next/dist/docs/ -type f -name *.md)"
+      "Bash(find /c/Users/knytr/orbit/node_modules/next/dist/docs/ -type f -name *.md)",
+      "Bash(grep:*)",
+      "Bash(ls -la /c/Users/knytr/orbit/app/\\\\\\(app\\\\\\)/w/[workspaceId]/)",
+      "Bash(ls -la /c/Users/knytr/orbit/app/\\\\\\(app\\\\\\)/settings/)",
+      "Bash(xargs wc:*)",
+      "Bash(supabase db:*)",
+      "Bash(psql:*)",
+      "Bash(node:*)"
     ]
   }
 }
