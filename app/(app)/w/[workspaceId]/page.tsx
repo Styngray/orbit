@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { CreateBoardDialog } from "@/components/app/create-board-dialog"
 import { BoardCard } from "@/components/app/board-card"
+import { getTeamPlan } from "@/lib/plans-server"
 
 interface Props {
   params: Promise<{ workspaceId: string }>
@@ -13,17 +14,20 @@ export default async function WorkspacePage({ params }: Props) {
 
   const { data: workspace } = await supabase
     .from("workspaces")
-    .select("id, name")
+    .select("id, name, team_id")
     .eq("id", workspaceId)
     .single()
 
   if (!workspace) notFound()
 
-  const { data: boards } = await supabase
-    .from("boards")
-    .select("id, name, description, created_at")
-    .eq("workspace_id", workspaceId)
-    .order("created_at")
+  const [{ data: boards }, plan] = await Promise.all([
+    supabase
+      .from("boards")
+      .select("id, name, description, created_at")
+      .eq("workspace_id", workspaceId)
+      .order("created_at"),
+    getTeamPlan(workspace.team_id),
+  ])
 
   return (
     <div className="p-6 h-full overflow-y-auto">
@@ -32,7 +36,11 @@ export default async function WorkspacePage({ params }: Props) {
         <h1 className="text-2xl font-semibold tracking-tight">
           {workspace.name}
         </h1>
-        <CreateBoardDialog workspaceId={workspaceId} />
+        <CreateBoardDialog
+          workspaceId={workspaceId}
+          teamId={workspace.team_id}
+          currentPlan={plan}
+        />
       </div>
 
       {boards && boards.length > 0 ? (

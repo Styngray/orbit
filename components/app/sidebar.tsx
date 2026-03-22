@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
-import { Settings, Plus, ChevronDown, LogOut, User, ChevronUp } from "lucide-react"
+import { Settings, Plus, ChevronDown, LogOut, User, ChevronUp, CreditCard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { signOut } from "@/lib/actions/auth"
 import {
@@ -17,6 +17,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { CreateBoardDialog } from "./create-board-dialog"
 import { CreateWorkspaceDialog } from "./create-workspace-dialog"
 import { ThemeToggle } from "./theme-toggle"
+import { PlanBadge } from "./plan-badge"
+import type { Plan } from "@/lib/plans"
 
 interface Board {
   id: string
@@ -38,6 +40,7 @@ interface SidebarProps {
   userDisplayName: string
   userInitials: string
   userEmail: string
+  teamPlans: Record<string, string>
 }
 
 export function Sidebar({
@@ -46,6 +49,7 @@ export function Sidebar({
   userDisplayName,
   userInitials,
   userEmail,
+  teamPlans,
 }: SidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -54,12 +58,13 @@ export function Sidebar({
   const boardId = pathname.match(/^\/w\/[^/]+\/b\/([^/?]+)/)?.[1]
 
   const currentWorkspace = workspaces.find((w) => w.id === workspaceId)
+  const teamId = currentWorkspace?.team_id ?? ""
   const teamName =
     currentWorkspace?.teams?.name ?? currentWorkspace?.name ?? "Orbit"
   const teamInitial = teamName.charAt(0).toUpperCase()
+  const currentPlan = (teamPlans[teamId] ?? "free") as Plan
 
   const workspaceBoards = boards.filter((b) => b.workspace_id === workspaceId)
-
 
   return (
     <aside className="flex h-full w-56 flex-col border-r bg-sidebar">
@@ -123,6 +128,8 @@ export function Sidebar({
           {workspaceId && (
             <CreateBoardDialog
               workspaceId={workspaceId}
+              teamId={teamId}
+              currentPlan={currentPlan}
               trigger={
                 <button className="size-5 flex items-center justify-center rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
                   <Plus className="size-3.5" />
@@ -178,7 +185,10 @@ export function Sidebar({
                   {userEmail}
                 </p>
               </div>
-              <ChevronUp className="size-3.5 shrink-0 text-sidebar-foreground/40" />
+              <div className="flex items-center gap-1">
+                <PlanBadge plan={currentPlan} />
+                <ChevronUp className="size-3.5 shrink-0 text-sidebar-foreground/40" />
+              </div>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="top" className="w-52">
@@ -194,6 +204,12 @@ export function Sidebar({
                 Team settings
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem asChild>
+              <a href="/settings/billing" className="cursor-pointer">
+                <CreditCard className="mr-2 size-4" />
+                Billing
+              </a>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <form action={signOut}>

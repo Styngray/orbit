@@ -8,7 +8,7 @@
 | 2 | Onboarding & Workspaces | ✅ Complete | supabase |
 | 3 | Kanban & Tasks | ✅ Complete | milestone/3-kanban |
 | 4 | Team & User Management | ✅ Complete | milestone/4-team-mgmt |
-| 5 | Payments (Stripe) | 🔲 Not started | milestone/5-payments |
+| 5 | Payments (Stripe) | ✅ Complete | stripe |
 | 6 | AI Features | 🔲 Not started | milestone/6-ai |
 
 ---
@@ -61,13 +61,16 @@
 ## Milestone 5: Payments (Stripe)
 **Goal:** Gated Lite and Pro subscription tiers
 
-- [ ] Define Lite vs Pro feature limits
-- [ ] Stripe Products + Prices setup
-- [ ] Checkout flow
-- [ ] Billing portal
-- [ ] Webhook handler (`/api/stripe/webhook`)
-- [ ] Feature-gate enforcement
-- [ ] Upgrade prompts at limits
+- [x] Define plan limits: Free (1 project, solo), Lite ($9/mo, 10 projects, 3 members), Pro ($19/mo, unlimited + AI)
+- [x] Stripe Products + Prices setup (configure via env: `STRIPE_PRICE_LITE`, `STRIPE_PRICE_PRO`)
+- [x] Checkout flow (`/api/stripe/checkout` + `startCheckout` server action)
+- [x] Billing portal (`/api/stripe/billing-portal` + `openBillingPortal` server action)
+- [x] Webhook handler (`/api/stripe/webhook`) — syncs subscription state to DB
+- [x] Feature-gate enforcement on `createBoard` and `inviteMember` server actions
+- [x] Upgrade prompts at limits (`UpgradeModal`, free-plan invite wall)
+- [x] Public pricing page (`/pricing`)
+- [x] Dashboard billing page (`/settings/billing`) with usage meters
+- [x] Plan badge in sidebar user menu
 
 ---
 

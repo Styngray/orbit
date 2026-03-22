@@ -4,13 +4,14 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { sendInviteEmail } from "@/lib/email"
+import { checkMemberLimit } from "@/lib/plans-server"
 
 export async function inviteMember(
   teamId: string,
   workspaceId: string,
   email: string,
   role: "admin" | "member"
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; limitReached?: true; plan?: string }> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -29,6 +30,19 @@ export async function inviteMember(
 
   if (!membership || !["owner", "admin"].includes(membership.role)) {
     return { error: "Not authorized" }
+  }
+
+  // Check member limit for this plan
+  const check = await checkMemberLimit(teamId)
+  if (!check.allowed) {
+    return {
+      error:
+        check.plan === "free"
+          ? "Team collaboration requires a Lite or Pro plan. Upgrade to invite members."
+          : `You've reached the ${check.limit}-member limit on the ${check.plan} plan. Upgrade to add more.`,
+      limitReached: true,
+      plan: check.plan,
+    }
   }
 
   // Check for existing pending invitation
@@ -223,6 +237,11 @@ export async function acceptInvitation(
     .maybeSingle()
 
   if (!existingMember) {
+    const limitCheck = await checkMemberLimit(invite.team_id)
+    if (!limitCheck.allowed) {
+      return { error: "This team has reached its member limit. Ask the team owner to upgrade their plan." }
+    }
+
     const { error } = await admin.from("team_members").insert({
       team_id: invite.team_id,
       user_id: user.id,
