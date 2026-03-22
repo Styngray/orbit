@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/app/sidebar"
 import { Toaster } from "@/components/ui/sonner"
 import { createClient } from "@/lib/supabase/server"
+import { getTeamPlan } from "@/lib/plans-server"
 
 export default async function AppLayout({
   children,
@@ -38,6 +39,16 @@ export default async function AppLayout({
     teams: Array.isArray(w.teams) ? (w.teams[0] ?? null) : w.teams,
   }))
 
+  // Get plan for the first workspace's team (sidebar needs it for the current workspace)
+  // We fetch per-team plans lazily; sidebar will re-fetch on workspace switch
+  const teamPlans: Record<string, string> = {}
+  const uniqueTeamIds = [...new Set(workspaces.map((w) => w.team_id))]
+  await Promise.all(
+    uniqueTeamIds.map(async (teamId) => {
+      teamPlans[teamId] = await getTeamPlan(teamId)
+    })
+  )
+
   const displayName =
     profile?.display_name ??
     user?.user_metadata?.full_name ??
@@ -53,6 +64,7 @@ export default async function AppLayout({
         userDisplayName={displayName}
         userInitials={initials}
         userEmail={user?.email ?? ""}
+        teamPlans={teamPlans}
       />
       <main className="flex-1 overflow-hidden min-w-0">{children}</main>
       <Toaster />

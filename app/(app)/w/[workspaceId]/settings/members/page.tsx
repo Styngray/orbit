@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { MembersList } from "@/components/app/members-list"
 import { InviteMemberForm } from "@/components/app/invite-member-form"
 import { PendingInvitationsList } from "@/components/app/pending-invitations-list"
+import { getTeamPlan } from "@/lib/plans-server"
 
 interface Props {
   params: Promise<{ workspaceId: string }>
@@ -23,6 +24,8 @@ export default async function MembersPage({ params }: Props) {
     .single()
 
   if (!workspace) notFound()
+
+  const currentPlan = await getTeamPlan(workspace.team_id)
 
   const [{ data: membersRaw }, { data: membership }, { data: invitations }] =
     await Promise.all([
@@ -65,7 +68,7 @@ export default async function MembersPage({ params }: Props) {
               They&apos;ll receive an email with a link to join your team.
             </p>
           </div>
-          <InviteMemberForm teamId={workspace.team_id} workspaceId={workspaceId} />
+          <InviteMemberForm teamId={workspace.team_id} workspaceId={workspaceId} currentPlan={currentPlan} />
         </section>
       )}
 

@@ -28,7 +28,9 @@
       "Bash(xargs wc:*)",
       "Bash(supabase db:*)",
       "Bash(psql:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(/c/Users/knytr/orbit/.env.local.example:*)"
     ]
   }
 }
