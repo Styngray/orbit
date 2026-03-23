@@ -47,7 +47,7 @@ function UsageMeter({ label, current, limit }: { label: string; current: number;
         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${
-              isAtLimit ? "bg-destructive" : isNearLimit ? "bg-amber-500" : "bg-violet-500"
+              isAtLimit ? "bg-destructive" : isNearLimit ? "bg-amber-500" : "bg-[#0029bb]"
             }`}
             style={{ width: `${pct}%` }}
           />
@@ -66,7 +66,7 @@ const planFeatures: Record<Plan, string[]> = {
 const planIcons: Record<Plan, React.ReactNode> = {
   free: null,
   lite: <Zap className="size-4 text-blue-500" />,
-  pro: <Crown className="size-4 text-violet-500" />,
+  pro: <Crown className="size-4 text-[#0029bb]" />,
 }
 
 export function BillingPageClient({ teamId, teamName, plan, planDisplay, isAdmin, subscription, usage, prices }: Props) {
@@ -169,7 +169,7 @@ export function BillingPageClient({ teamId, teamName, plan, planDisplay, isAdmin
                 const price = prices[p]
 
                 return (
-                  <Card key={p} className={isCurrent ? "border-violet-500 ring-1 ring-violet-500" : ""}>
+                  <Card key={p} className={isCurrent ? "border-[#0029bb] ring-1 ring-[#0029bb]" : ""}>
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-sm capitalize">{p}</CardTitle>
@@ -192,7 +192,7 @@ export function BillingPageClient({ teamId, teamName, plan, planDisplay, isAdmin
                       {!isCurrent && !isDowngrade && (
                         <Button
                           size="sm"
-                          className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+                          className="w-full bg-[#0029bb] hover:bg-[#0022a0] text-white"
                           onClick={() => handleUpgrade(p)}
                           disabled={checkoutPending}
                         >
@@ -208,8 +208,8 @@ export function BillingPageClient({ teamId, teamName, plan, planDisplay, isAdmin
         )}
 
         {(plan as string) === "pro" && (
-          <div className="rounded-lg border bg-violet-50 dark:bg-violet-950/20 p-4 flex items-center gap-3">
-            <Crown className="size-5 text-violet-500 shrink-0" />
+          <div className="rounded-lg border bg-[#e6ebff] dark:bg-[#000e52]/20 p-4 flex items-center gap-3">
+            <Crown className="size-5 text-[#0029bb] shrink-0" />
             <div>
               <p className="text-sm font-medium">You&apos;re on the Pro plan</p>
               <p className="text-sm text-muted-foreground">You have access to all features including AI.</p>

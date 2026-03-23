@@ -114,7 +114,7 @@ export async function deleteTask(
 export async function reorderTask(
   id: string,
   workspaceId: string,
-  status: TaskStatus,
+  status: string,
   sortOrder: number
 ): Promise<{ error?: string }> {
   const supabase = await createClient()

@@ -21,8 +21,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { StatusIcon } from "./status-icon"
 import { PriorityIcon } from "./priority-icon"
 import { LabelSelector } from "./label-selector"
-import { STATUSES, PRIORITIES, type TaskStatus, type TaskPriority } from "@/lib/kanban-constants"
+import { PRIORITIES, type TaskStatus, type TaskPriority } from "@/lib/kanban-constants"
 import type { CustomLabel } from "@/lib/label-constants"
+import type { BoardStatus } from "@/lib/actions/statuses"
 import { ChevronDown } from "lucide-react"
 
 interface Member {
@@ -41,6 +42,7 @@ interface NewIssueDialogProps {
   members: Member[]
   workspaceId: string
   customLabels: CustomLabel[]
+  statuses: BoardStatus[]
   onLabelCreated: (label: CustomLabel) => void
   onSubmit: (data: {
     title: string
@@ -60,6 +62,7 @@ export function NewIssueDialog({
   members,
   workspaceId,
   customLabels,
+  statuses,
   onLabelCreated,
   onSubmit,
 }: NewIssueDialogProps) {
@@ -103,7 +106,7 @@ export function NewIssueDialog({
     onOpenChange(false)
   }
 
-  const currentStatus = STATUSES.find((s) => s.value === status)
+  const currentStatus = statuses.find((s) => s.value === status)
   const currentPriority = PRIORITIES.find((p) => p.value === priority)
   const assigneeMember = members.find((m) => m.user_id === assigneeId)
   const assigneeName = assigneeMember?.profiles?.display_name ?? assigneeMember?.user_id ?? null
@@ -150,15 +153,15 @@ export function NewIssueDialog({
                       type="button"
                       className="flex w-full items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm hover:bg-accent transition-colors"
                     >
-                      <StatusIcon status={status} className="size-3.5" />
+                      <StatusIcon status={status} color={currentStatus?.color} className="size-3.5" />
                       <span className="flex-1 text-left">{currentStatus?.label}</span>
                       <ChevronDown className="size-3.5 text-muted-foreground" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-44">
-                    {STATUSES.map((s) => (
+                    {statuses.map((s) => (
                       <DropdownMenuItem key={s.value} onSelect={() => setStatus(s.value)}>
-                        <StatusIcon status={s.value} className="size-3.5" />
+                        <StatusIcon status={s.value} color={s.color} className="size-3.5" />
                         {s.label}
                       </DropdownMenuItem>
                     ))}

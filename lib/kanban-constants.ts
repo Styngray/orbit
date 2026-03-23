@@ -1,14 +1,9 @@
-export type TaskStatus =
-  | "backlog"
-  | "todo"
-  | "in_progress"
-  | "done"
-  | "cancelled"
+export type TaskStatus = string
 
 export type TaskPriority = "urgent" | "high" | "medium" | "low" | "none"
 
 export const STATUSES: {
-  value: TaskStatus
+  value: string
   label: string
   color: string
 }[] = [

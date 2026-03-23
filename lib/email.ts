@@ -19,7 +19,7 @@ function emailLayout(content: string) {
             <td style="padding-bottom:24px;">
               <table cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="background:#7c3aed;border-radius:8px;width:32px;height:32px;text-align:center;vertical-align:middle;">
+                  <td style="background:#0029bb;border-radius:8px;width:32px;height:32px;text-align:center;vertical-align:middle;">
                     <span style="color:#fff;font-size:15px;font-weight:700;line-height:32px;">O</span>
                   </td>
                   <td style="padding-left:10px;vertical-align:middle;">
@@ -66,7 +66,7 @@ export async function sendInviteEmail(
     to,
     subject: `${inviterName} invited you to join ${teamName} on Orbit`,
     html: emailLayout(`
-      <p style="margin:0 0 6px;font-size:12px;font-weight:500;color:#7c3aed;letter-spacing:0.05em;text-transform:uppercase;">Team invitation</p>
+      <p style="margin:0 0 6px;font-size:12px;font-weight:500;color:#0029bb;letter-spacing:0.05em;text-transform:uppercase;">Team invitation</p>
       <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#18181b;letter-spacing:-0.4px;line-height:1.3;">
         You've been invited to ${teamName}
       </h1>
@@ -75,7 +75,7 @@ export async function sendInviteEmail(
       </p>
       <a
         href="${inviteUrl}"
-        style="display:inline-block;padding:11px 22px;background:#7c3aed;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500;letter-spacing:-0.1px;"
+        style="display:inline-block;padding:11px 22px;background:#0029bb;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500;letter-spacing:-0.1px;"
       >Accept invitation</a>
       <hr style="margin:28px 0;border:none;border-top:1px solid #e4e4e7;" />
       <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">
@@ -92,7 +92,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
     to,
     subject: "Welcome to Orbit",
     html: emailLayout(`
-      <p style="margin:0 0 6px;font-size:12px;font-weight:500;color:#7c3aed;letter-spacing:0.05em;text-transform:uppercase;">Welcome aboard</p>
+      <p style="margin:0 0 6px;font-size:12px;font-weight:500;color:#0029bb;letter-spacing:0.05em;text-transform:uppercase;">Welcome aboard</p>
       <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#18181b;letter-spacing:-0.4px;line-height:1.3;">
         Hi ${name}, you're in.
       </h1>
@@ -101,7 +101,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
       </p>
       <a
         href="${process.env.NEXT_PUBLIC_APP_URL}"
-        style="display:inline-block;padding:11px 22px;background:#7c3aed;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500;letter-spacing:-0.1px;"
+        style="display:inline-block;padding:11px 22px;background:#0029bb;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500;letter-spacing:-0.1px;"
       >Open Orbit</a>
       <hr style="margin:28px 0;border:none;border-top:1px solid #e4e4e7;" />
       <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">

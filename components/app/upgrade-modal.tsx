@@ -54,8 +54,8 @@ export function UpgradeModal({ open, onOpenChange, teamId, reason, currentPlan }
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-950">
-              <Zap className="size-4 text-violet-600" />
+            <div className="flex size-8 items-center justify-center rounded-full bg-[#ccd6ff] dark:bg-[#000e52]">
+              <Zap className="size-4 text-[#0029bb]" />
             </div>
             <DialogTitle>{title}</DialogTitle>
           </div>
@@ -87,7 +87,7 @@ export function UpgradeModal({ open, onOpenChange, teamId, reason, currentPlan }
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
             Cancel
           </Button>
-          <Button onClick={handleUpgrade} disabled={pending} className="bg-violet-600 hover:bg-violet-700 text-white">
+          <Button onClick={handleUpgrade} disabled={pending} className="bg-[#0029bb] hover:bg-[#0022a0] text-white">
             {pending ? "Redirecting…" : `Upgrade to ${PLAN_DISPLAY[targetPlan].label}`}
           </Button>
         </div>

@@ -38,13 +38,13 @@ import { StatusIcon } from "./status-icon"
 import { PriorityIcon } from "./priority-icon"
 import { LabelSelector } from "./label-selector"
 import {
-  STATUSES,
   PRIORITIES,
   type TaskStatus,
   type TaskPriority,
 } from "@/lib/kanban-constants"
 import type { CustomLabel } from "@/lib/label-constants"
 import type { Task } from "@/lib/actions/tasks"
+import type { BoardStatus } from "@/lib/actions/statuses"
 
 interface Member {
   user_id: string
@@ -60,6 +60,7 @@ interface TaskSheetProps {
   members: Member[]
   workspaceId: string
   customLabels: CustomLabel[]
+  statuses: BoardStatus[]
   onLabelCreated: (label: CustomLabel) => void
   onLabelUpdated?: (label: CustomLabel) => void
   onLabelDeleted?: (id: string) => void
@@ -86,6 +87,7 @@ function TaskSheetContent({
   members,
   workspaceId,
   customLabels,
+  statuses,
   onLabelCreated,
   onLabelUpdated,
   onLabelDeleted,
@@ -97,6 +99,7 @@ function TaskSheetContent({
   members: Member[]
   workspaceId: string
   customLabels: CustomLabel[]
+  statuses: BoardStatus[]
   onLabelCreated: (label: CustomLabel) => void
   onLabelUpdated?: (label: CustomLabel) => void
   onLabelDeleted?: (id: string) => void
@@ -150,14 +153,14 @@ function TaskSheetContent({
     onUpdate(task.id, { labels })
   }
 
-  const currentStatus = STATUSES.find((s) => s.value === task.status)
+  const currentStatus = statuses.find((s) => s.value === task.status)
   const currentPriority = PRIORITIES.find((p) => p.value === task.priority)
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Title row */}
       <div className="flex items-start gap-3 px-6 pt-6 pb-5 pr-14">
-        <StatusIcon status={task.status} className="mt-0.5" />
+        <StatusIcon status={task.status} color={currentStatus?.color} className="mt-0.5" />
         <input
           className="flex-1 text-[15px] font-medium bg-transparent border-none outline-none leading-snug resize-none"
           value={title}
@@ -175,15 +178,15 @@ function TaskSheetContent({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="h-8 flex items-center gap-1.5 rounded-md px-2 text-sm hover:bg-accent transition-colors">
-                <StatusIcon status={task.status} />
+                <StatusIcon status={task.status} color={currentStatus?.color} />
                 <span>{currentStatus?.label}</span>
                 <ChevronDown className="size-3 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              {STATUSES.map((s) => (
+              {statuses.map((s) => (
                 <DropdownMenuItem key={s.value} onSelect={() => handleStatusChange(s.value)}>
-                  <StatusIcon status={s.value} />
+                  <StatusIcon status={s.value} color={s.color} />
                   {s.label}
                 </DropdownMenuItem>
               ))}
@@ -345,6 +348,7 @@ export function TaskSheet({
   members,
   workspaceId,
   customLabels,
+  statuses,
   onLabelCreated,
   onLabelUpdated,
   onLabelDeleted,
@@ -375,6 +379,7 @@ export function TaskSheet({
             members={members}
             workspaceId={workspaceId}
             customLabels={customLabels}
+            statuses={statuses}
             onLabelCreated={onLabelCreated}
             onLabelUpdated={onLabelUpdated}
             onLabelDeleted={onLabelDeleted}

@@ -34,7 +34,7 @@ export function InviteMemberForm({ teamId, workspaceId, currentPlan = "free" }: 
     return (
       <>
         <div className="rounded-lg border border-dashed p-4 flex items-start gap-3">
-          <Zap className="size-4 text-violet-500 mt-0.5 shrink-0" />
+          <Zap className="size-4 text-[#0029bb] mt-0.5 shrink-0" />
           <div className="space-y-1">
             <p className="text-sm font-medium">Team collaboration requires a paid plan</p>
             <p className="text-sm text-muted-foreground">

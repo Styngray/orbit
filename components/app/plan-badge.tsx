@@ -4,7 +4,7 @@ import type { Plan } from "@/lib/plans"
 const styles: Record<Plan, string> = {
   free: "bg-muted text-muted-foreground",
   lite: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  pro:  "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+  pro:  "bg-[#ccd6ff] text-[#0029bb] dark:bg-[#000e52] dark:text-[#80aaff]",
 }
 
 const labels: Record<Plan, string> = {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useOptimistic, useTransition, useEffect, useCallback } from "react"
+import { useState, useOptimistic, useTransition, useEffect, useCallback, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   DndContext,
@@ -12,7 +12,7 @@ import {
   closestCorners,
 } from "@dnd-kit/core"
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable"
-import { LayoutGrid, List } from "lucide-react"
+import { LayoutGrid, List, Sparkles, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -20,8 +20,11 @@ import { KanbanColumn } from "./kanban-column"
 import { KanbanList } from "./kanban-list"
 import { TaskSheet } from "./task-sheet"
 import { NewIssueDialog } from "./new-issue-dialog"
+import { AIChatSheet } from "@/components/app/ai-chat-sheet"
 import { createTask, reorderTask, updateTask } from "@/lib/actions/tasks"
-import { STATUSES, type TaskStatus, type TaskPriority } from "@/lib/kanban-constants"
+import { createBoardStatus, updateBoardStatus, deleteBoardStatus } from "@/lib/actions/statuses"
+import type { BoardStatus } from "@/lib/actions/statuses"
+import { type TaskPriority } from "@/lib/kanban-constants"
 import type { Task } from "@/lib/actions/tasks"
 import type { CustomLabel } from "@/lib/label-constants"
 
@@ -53,18 +56,22 @@ interface Member {
 
 interface KanbanBoardProps {
   initialTasks: Task[]
+  initialStatuses: BoardStatus[]
   members: Member[]
   boardId: string
   workspaceId: string
+  teamId: string
   boardName: string
   customLabels: CustomLabel[]
+  isPro: boolean
 }
 
 type OptimisticAction =
   | { type: "add"; task: Task }
-  | { type: "move"; taskId: string; status: TaskStatus; sortOrder: number }
+  | { type: "move"; taskId: string; status: string; sortOrder: number }
   | { type: "update"; taskId: string; patch: Partial<Task> }
   | { type: "delete"; taskId: string }
+  | { type: "moveStatus"; fromStatus: string; toStatus: string }
 
 function applyOptimistic(tasks: Task[], action: OptimisticAction): Task[] {
   switch (action.type) {
@@ -82,16 +89,123 @@ function applyOptimistic(tasks: Task[], action: OptimisticAction): Task[] {
       )
     case "delete":
       return tasks.filter((t) => t.id !== action.taskId)
+    case "moveStatus":
+      return tasks.map((t) =>
+        t.status === action.fromStatus ? { ...t, status: action.toStatus } : t
+      )
   }
 }
 
+// ── Status color picker ────────────────────────────────────────────────────────
+
+const STATUS_COLORS = [
+  "#94a3b8", "#60a5fa", "#fbbf24", "#4ade80", "#f87171",
+  "#a78bfa", "#fb923c", "#38bdf8", "#f472b6", "#2dd4bf",
+]
+
+function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {STATUS_COLORS.map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onChange(c)}
+          className={cn(
+            "size-5 rounded-full transition-transform hover:scale-110",
+            value === c && "ring-2 ring-offset-1 ring-ring"
+          )}
+          style={{ backgroundColor: c }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ── Add status button ──────────────────────────────────────────────────────────
+
+function AddStatusButton({ onAdd }: { onAdd: (label: string, color: string) => Promise<void> }) {
+  const [open, setOpen] = useState(false)
+  const [label, setLabel] = useState("")
+  const [color, setColor] = useState(STATUS_COLORS[0])
+  const [loading, setLoading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function handleOpen() {
+    setLabel("")
+    setColor(STATUS_COLORS[0])
+    setOpen(true)
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const trimmed = label.trim()
+    if (!trimmed) return
+    setLoading(true)
+    await onAdd(trimmed, color)
+    setLoading(false)
+    setOpen(false)
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={handleOpen}
+        className="flex items-center gap-1.5 h-8 px-3 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+      >
+        <Plus className="size-3.5" />
+        Add status
+      </button>
+    )
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-3 w-56 shrink-0 p-3 rounded-lg border bg-card shadow-sm"
+    >
+      <input
+        ref={inputRef}
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        placeholder="Status name…"
+        className="text-sm bg-transparent border-b border-border focus:outline-none py-0.5"
+        onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+      />
+      <ColorPicker value={color} onChange={setColor} />
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={loading || !label.trim()}
+          className="flex-1 h-7 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+        >
+          {loading ? "Adding…" : "Add"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="flex-1 h-7 rounded-md border text-xs font-medium hover:bg-accent transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// ── Main board ─────────────────────────────────────────────────────────────────
+
 export function KanbanBoard({
   initialTasks,
+  initialStatuses,
   members,
   boardId,
   workspaceId,
+  teamId,
   boardName,
   customLabels,
+  isPro,
 }: KanbanBoardProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -102,6 +216,8 @@ export function KanbanBoard({
     initialTasks,
     applyOptimistic
   )
+
+  const [statuses, setStatuses] = useState<BoardStatus[]>(initialStatuses)
 
   // Local custom labels state so newly created labels appear immediately
   const [localCustomLabels, setLocalCustomLabels] = useState<CustomLabel[]>(customLabels)
@@ -118,11 +234,14 @@ export function KanbanBoard({
     setLocalCustomLabels((prev) => prev.filter((l) => l.id !== id))
   }
 
+  // AI chat
+  const [aiOpen, setAiOpen] = useState(false)
+
   // New issue dialog
   const [newIssueOpen, setNewIssueOpen] = useState(false)
-  const [newIssueStatus, setNewIssueStatus] = useState<TaskStatus>("backlog")
+  const [newIssueStatus, setNewIssueStatus] = useState<string>("backlog")
 
-  const openNewIssue = useCallback((status: TaskStatus) => {
+  const openNewIssue = useCallback((status: string) => {
     setNewIssueStatus(status)
     setNewIssueOpen(true)
   }, [])
@@ -139,7 +258,7 @@ export function KanbanBoard({
 
       if (e.key === "n" || e.key === "N") {
         e.preventDefault()
-        openNewIssue("backlog")
+        openNewIssue(statuses[0]?.value ?? "backlog")
       } else if (e.key === "Escape") {
         setActiveTaskId(null)
         setNewIssueOpen(false)
@@ -148,7 +267,7 @@ export function KanbanBoard({
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [openNewIssue])
+  }, [openNewIssue, statuses])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -165,10 +284,10 @@ export function KanbanBoard({
     const task = optimisticTasks.find((t) => t.id === taskId)
     if (!task) return
 
-    let targetStatus: TaskStatus
-    const statusValues = STATUSES.map((s) => s.value)
-    if (statusValues.includes(over.id as TaskStatus)) {
-      targetStatus = over.id as TaskStatus
+    let targetStatus: string
+    const statusValues = statuses.map((s) => s.value)
+    if (statusValues.includes(over.id as string)) {
+      targetStatus = over.id as string
     } else {
       const overTask = optimisticTasks.find((t) => t.id === over.id)
       if (!overTask) return
@@ -180,7 +299,7 @@ export function KanbanBoard({
       .sort(sortByPriority)
 
     let newOrder: number
-    const overTaskId = statusValues.includes(over.id as TaskStatus)
+    const overTaskId = statusValues.includes(over.id as string)
       ? null
       : (over.id as string)
 
@@ -215,7 +334,7 @@ export function KanbanBoard({
   async function handleCreateIssue(data: {
     title: string
     description: string | null
-    status: TaskStatus
+    status: string
     priority: TaskPriority
     assignee_id: string | null
     due_date: string | null
@@ -241,7 +360,6 @@ export function KanbanBoard({
   }
 
   function handleTaskUpdate(taskId: string, patch: Partial<Task>) {
-    // Strip non-DB fields before sending to server
     const { id: _id, board_id: _bid, sort_order: _so, created_at: _ca, ...dbPatch } = patch as Task
     startTransition(async () => {
       dispatchOptimistic({ type: "update", taskId, patch })
@@ -257,40 +375,90 @@ export function KanbanBoard({
     })
   }
 
-  const totalCount = optimisticTasks.length
+  // ── Status management ────────────────────────────────────────────────────────
+
+  async function handleAddStatus(label: string, color: string) {
+    const { data, error } = await createBoardStatus(boardId, workspaceId, label, color)
+    if (error) { toast.error(error); return }
+    if (data) setStatuses((prev) => [...prev, data])
+  }
+
+  async function handleRenameStatus(id: string, label: string) {
+    setStatuses((prev) => prev.map((s) => s.id === id ? { ...s, label } : s))
+    const { error } = await updateBoardStatus(id, boardId, workspaceId, { label })
+    if (error) {
+      toast.error(error)
+      router.refresh()
+    }
+  }
+
+  async function handleColorChangeStatus(id: string, color: string) {
+    setStatuses((prev) => prev.map((s) => s.id === id ? { ...s, color } : s))
+    const { error } = await updateBoardStatus(id, boardId, workspaceId, { color })
+    if (error) {
+      toast.error(error)
+      router.refresh()
+    }
+  }
+
+  async function handleDeleteStatus(id: string, moveToValue: string) {
+    const deletedStatus = statuses.find((s) => s.id === id)
+    if (!deletedStatus) return
+
+    // Optimistically remove the status and move tasks
+    setStatuses((prev) => prev.filter((s) => s.id !== id))
+    startTransition(() => {
+      dispatchOptimistic({ type: "moveStatus", fromStatus: deletedStatus.value, toStatus: moveToValue })
+    })
+
+    const { error } = await deleteBoardStatus(id, boardId, workspaceId, moveToValue)
+    if (error) {
+      toast.error(error)
+      router.refresh()
+    } else {
+      router.refresh()
+    }
+  }
 
   return (
     <TooltipProvider>
       <div className="flex flex-col h-full">
         {/* Toolbar */}
-        <div className="flex items-center border-b shrink-0 px-4 h-11">
-          <button
-            onClick={() => setView("board")}
-            className={cn(
-              "flex items-center gap-1.5 px-3 h-full text-sm border-b-2 transition-colors",
-              view === "board"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <LayoutGrid className="size-4" />
-            Board
-          </button>
-          <button
-            onClick={() => setView("list")}
-            className={cn(
-              "flex items-center gap-1.5 px-3 h-full text-sm border-b-2 transition-colors",
-              view === "list"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <List className="size-4" />
-            List
-          </button>
-          <span className="ml-3 text-sm text-muted-foreground">
-            {totalCount} {totalCount === 1 ? "task" : "tasks"}
-          </span>
+        <div className="flex items-center border-b shrink-0 h-11 gap-3" style={{ paddingLeft: "24px", paddingRight: "24px" }}>
+          <span className="font-semibold text-lg truncate">{boardName}</span>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={() => setView("board")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 h-7 rounded-md text-sm font-medium transition-colors",
+                view === "board"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              )}
+            >
+              <LayoutGrid className="size-3.5" />
+              Board
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 h-7 rounded-md text-sm font-medium transition-colors",
+                view === "list"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              )}
+            >
+              <List className="size-3.5" />
+              List
+            </button>
+            <button
+              onClick={() => setAiOpen(true)}
+              className="flex items-center gap-1.5 px-3 h-7 rounded-md text-sm font-medium bg-[#0029bb]/15 hover:bg-[#0029bb]/25 text-[#4d79ff] transition-colors"
+            >
+              <Sparkles className="size-3.5" />
+              Ask AI
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -299,6 +467,7 @@ export function KanbanBoard({
             tasks={optimisticTasks}
             members={members}
             customLabels={localCustomLabels}
+            statuses={statuses}
             onTaskClick={openTask}
           />
         ) : (
@@ -308,25 +477,32 @@ export function KanbanBoard({
             onDragEnd={handleDragEnd}
           >
             <div className="flex gap-4 p-6 overflow-x-auto flex-1 items-start">
-              {STATUSES.map((statusConfig) => {
+              {statuses.map((statusConfig) => {
                 const columnTasks = optimisticTasks
                   .filter((t) => t.status === statusConfig.value)
                   .sort(sortByPriority)
 
                 return (
                   <KanbanColumn
-                    key={statusConfig.value}
+                    key={statusConfig.id}
+                    statusId={statusConfig.id}
                     status={statusConfig.value}
                     label={statusConfig.label}
                     color={statusConfig.color}
                     tasks={columnTasks}
                     members={members}
                     customLabels={localCustomLabels}
+                    allStatuses={statuses}
+                    canDelete={statuses.length > 1}
                     onAddTask={openNewIssue}
                     onTaskClick={openTask}
+                    onRename={handleRenameStatus}
+                    onColorChange={handleColorChangeStatus}
+                    onDelete={handleDeleteStatus}
                   />
                 )
               })}
+              <AddStatusButton onAdd={handleAddStatus} />
             </div>
           </DndContext>
         )}
@@ -339,8 +515,17 @@ export function KanbanBoard({
           members={members}
           workspaceId={workspaceId}
           customLabels={localCustomLabels}
+          statuses={statuses}
           onLabelCreated={handleLabelCreated}
           onSubmit={handleCreateIssue}
+        />
+
+        {/* AI chat */}
+        <AIChatSheet
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          teamId={teamId}
+          isPro={isPro}
         />
 
         {/* Task sheet */}
@@ -349,6 +534,7 @@ export function KanbanBoard({
           members={members}
           workspaceId={workspaceId}
           customLabels={localCustomLabels}
+          statuses={statuses}
           onLabelCreated={handleLabelCreated}
           onLabelUpdated={handleLabelUpdated}
           onLabelDeleted={handleLabelDeleted}

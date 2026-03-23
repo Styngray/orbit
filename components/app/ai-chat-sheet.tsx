@@ -73,7 +73,7 @@ export function AIChatSheet({ open, onOpenChange, teamId, isPro }: AIChatSheetPr
 
         {/* Header */}
         <div className="flex items-center gap-2 px-4 h-14 border-b shrink-0">
-          <Bot className="size-4 text-violet-500 shrink-0" />
+          <Bot className="size-4 text-[#0029bb] shrink-0" />
           <span className="text-sm font-medium flex-1">AI Assistant</span>
           <button
             onClick={() => onOpenChange(false)}
@@ -121,7 +121,7 @@ export function AIChatSheet({ open, onOpenChange, teamId, isPro }: AIChatSheetPr
                     className={cn(
                       "max-w-[85%] rounded-lg px-3 py-2 text-sm",
                       m.role === "user"
-                        ? "bg-violet-600 text-white"
+                        ? "bg-[#0029bb] text-white"
                         : "bg-muted text-foreground"
                     )}
                   >
@@ -170,14 +170,14 @@ export function AIChatSheet({ open, onOpenChange, teamId, isPro }: AIChatSheetPr
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about your tasks…"
                 rows={1}
-                className="flex-1 resize-none bg-muted rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-violet-500 placeholder:text-muted-foreground/60 max-h-32 overflow-y-auto leading-relaxed"
+                className="flex-1 resize-none bg-muted rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#0029bb] placeholder:text-muted-foreground/60 max-h-32 overflow-y-auto leading-relaxed"
                 style={{ minHeight: "36px" }}
               />
               <Button
                 type="submit"
                 size="sm"
                 disabled={isLoading || !input.trim()}
-                className="bg-violet-600 hover:bg-violet-700 text-white shrink-0 px-3"
+                className="bg-[#0029bb] hover:bg-[#0022a0] text-white shrink-0 px-3"
               >
                 <Send className="size-3.5" />
               </Button>

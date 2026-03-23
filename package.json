@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "screenshot": "playwright test tests/take-screenshot.spec.ts --project=chromium",
+    "test:e2e": "playwright test tests/landing.spec.ts --project=chromium"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.136",
@@ -37,6 +39,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

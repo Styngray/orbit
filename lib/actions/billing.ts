@@ -66,6 +66,54 @@ export async function startCheckout(
   redirect(session.url!)
 }
 
+export async function claimGuestCheckout(
+  teamId: string,
+  sessionId: string,
+  plan: "lite" | "pro"
+): Promise<{ error?: string }> {
+  const admin = createAdminClient()
+
+  let session: Stripe.Checkout.Session
+  try {
+    session = await stripe.checkout.sessions.retrieve(sessionId)
+  } catch {
+    return { error: "Invalid checkout session." }
+  }
+
+  if (session.payment_status !== "paid") {
+    return { error: "Payment not completed." }
+  }
+
+  const subscriptionId = session.subscription as string
+  const customerId = session.customer as string
+
+  // Tag the subscription with the teamId so future webhooks work
+  await stripe.subscriptions.update(subscriptionId, {
+    metadata: { teamId, plan },
+  })
+
+  // Store the customer on the team
+  await admin.from("teams").update({ stripe_customer_id: customerId }).eq("id", teamId)
+
+  const sub = await stripe.subscriptions.retrieve(subscriptionId)
+
+  const subAny = sub as unknown as Record<string, unknown>
+  const itemPeriodEnd = (sub.items?.data?.[0] as unknown as Record<string, unknown>)?.current_period_end
+  const periodEndRaw = (subAny.current_period_end ?? itemPeriodEnd) as number | null
+  const periodEnd = periodEndRaw ? new Date(periodEndRaw * 1000).toISOString() : null
+
+  await admin.from("subscriptions").upsert({
+    team_id: teamId,
+    stripe_subscription_id: subscriptionId,
+    plan,
+    status: sub.status as "active" | "trialing" | "past_due" | "canceled" | "incomplete",
+    current_period_end: periodEnd,
+    cancel_at_period_end: (subAny.cancel_at_period_end ?? false) as boolean,
+  }, { onConflict: "team_id" })
+
+  return {}
+}
+
 export async function openBillingPortal(teamId: string): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
