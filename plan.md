@@ -9,7 +9,8 @@
 | 3 | Kanban & Tasks | ✅ Complete | milestone/3-kanban |
 | 4 | Team & User Management | ✅ Complete | milestone/4-team-mgmt |
 | 5 | Payments (Stripe) | ✅ Complete | stripe |
-| 6 | AI Features | 🔲 Not started | milestone/6-ai |
+| 6 | AI Features | ✅ Complete | milestone/6-ai |
+| 7 | Landing Page & Pricing | 🔲 Not started | landing |
 
 ---
 
@@ -77,8 +78,24 @@
 ## Milestone 6: AI Features
 **Goal:** AI-powered productivity via AI SDK
 
-- [ ] AI task description generation
-- [ ] AI task breakdown (epic → subtasks)
-- [ ] Board/sprint summaries
-- [ ] Streaming responses in task panels
-- [ ] Gate AI features behind Pro plan
+- [x] AI task description generation
+- [x] AI task breakdown (epic → subtasks)
+- [x] Board/sprint summaries
+- [x] Streaming responses in task panels
+- [x] Gate AI features behind Pro plan
+
+---
+
+## Milestone 7: Landing Page & Pricing
+**Goal:** Striking public landing page + polished pricing page using Playwright for screenshot capture and design QA
+
+- [x] Dark-mode landing page at `/` (Linear.app aesthetic: dot grid, violet glow, gradient headline)
+- [x] Hero section with product screenshot in browser-chrome mockup (`components/landing/hero.tsx`)
+- [x] Features grid (4 cards: Kanban, Teams, AI, Speed) (`components/landing/features.tsx`)
+- [x] Pricing section with 3-tier cards + link to `/pricing` (`components/landing/pricing-section.tsx`)
+- [x] Sticky blurred navbar + minimal footer (`components/landing/navbar.tsx`, `footer.tsx`)
+- [x] Redesigned `/pricing` page — dark glass cards, violet accent on Lite tier
+- [x] Playwright screenshot script (`tests/take-screenshot.spec.ts`) — captures dashboard to `public/screenshot.png`
+- [x] Playwright design QA spec (`tests/landing.spec.ts`) — asserts sections render + saves visual snapshots
+- [x] `proxy.ts` updated to allow `/` as public route (unauthenticated access)
+- [ ] Run screenshot script to populate `public/screenshot.png` (requires dev server + credentials)

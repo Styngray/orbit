@@ -3,8 +3,9 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
-import { Settings, Plus, ChevronDown, LogOut, User, ChevronUp, CreditCard, Bot } from "lucide-react"
+import { Settings, Plus, ChevronDown, LogOut, User, ChevronUp, CreditCard, Bot, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import { signOut } from "@/lib/actions/auth"
 import { AIChatSheet } from "./ai-chat-sheet"
 import { PLAN_LIMITS } from "@/lib/plans"
@@ -18,10 +19,36 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { CreateBoardDialog } from "./create-board-dialog"
+import { deleteBoard } from "@/lib/actions/boards"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { CreateWorkspaceDialog } from "./create-workspace-dialog"
 import { ThemeToggle } from "./theme-toggle"
 import { PlanBadge } from "./plan-badge"
 import type { Plan } from "@/lib/plans"
+
+const BOARD_COLORS = [
+  "#0029bb", // blue
+  "#22c55e", // green
+  "#f97316", // orange
+  "#3b82f6", // blue
+  "#ec4899", // pink
+  "#eab308", // yellow
+  "#14b8a6", // teal
+  "#ef4444", // red
+]
+
+function boardColor(index: number) {
+  return BOARD_COLORS[index % BOARD_COLORS.length]
+}
 
 interface Board {
   id: string
@@ -57,6 +84,24 @@ export function Sidebar({
   const router = useRouter()
   const pathname = usePathname()
   const [chatOpen, setChatOpen] = useState(false)
+  const [deletingBoard, setDeletingBoard] = useState<Board | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
+  async function handleDeleteBoard() {
+    if (!deletingBoard) return
+    setDeleteLoading(true)
+    const { error } = await deleteBoard(deletingBoard.id, deletingBoard.workspace_id)
+    setDeleteLoading(false)
+    if (error) {
+      toast.error(error)
+      setDeletingBoard(null)
+      return
+    }
+    setDeletingBoard(null)
+    if (boardId === deletingBoard.id) {
+      router.push(`/w/${deletingBoard.workspace_id}`)
+    }
+  }
   const workspaceId =
     pathname.match(/^\/w\/([^/]+)/)?.[1] ?? workspaces[0]?.id
   const boardId = pathname.match(/^\/w\/[^/]+\/b\/([^/?]+)/)?.[1]
@@ -76,7 +121,7 @@ export function Sidebar({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="flex h-14 w-full items-center gap-2.5 border-b border-sidebar-border px-3 hover:bg-sidebar-accent transition-colors">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-violet-600 text-white text-xs font-bold select-none">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-[#0029bb] text-white text-xs font-bold select-none">
               {teamInitial}
             </div>
             <div className="flex-1 min-w-0 text-left">
@@ -144,19 +189,31 @@ export function Sidebar({
         </div>
 
         <nav className="space-y-0.5">
-          {workspaceBoards.map((board) => (
-            <Link
-              key={board.id}
-              href={`/w/${workspaceId}/b/${board.id}`}
-              className={cn(
-                "flex items-center rounded-md px-2 py-1.5 text-sm transition-colors",
-                board.id === boardId
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )}
-            >
-              {board.name}
-            </Link>
+          {workspaceBoards.map((board, i) => (
+            <div key={board.id} className="group/row relative flex items-center">
+              <Link
+                href={`/w/${workspaceId}/b/${board.id}`}
+                className={cn(
+                  "flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors min-w-0",
+                  board.id === boardId
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <span
+                  className="size-2 rounded-full shrink-0"
+                  style={{ backgroundColor: boardColor(i) }}
+                />
+                <span className="truncate">{board.name}</span>
+              </Link>
+              <button
+                onClick={() => setDeletingBoard(board)}
+                className="absolute right-1 opacity-0 group-hover/row:opacity-100 size-5 flex items-center justify-center rounded hover:bg-destructive/15 text-sidebar-foreground/40 hover:text-destructive transition-all"
+                title="Delete board"
+              >
+                <Trash2 className="size-3" />
+              </button>
+            </div>
           ))}
 
           {workspaceBoards.length === 0 && workspaceId && (
@@ -243,6 +300,27 @@ export function Sidebar({
         teamId={teamId}
         isPro={PLAN_LIMITS[currentPlan].ai}
       />
+
+      <AlertDialog open={!!deletingBoard} onOpenChange={(open) => !open && setDeletingBoard(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete &quot;{deletingBoard?.name}&quot;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the board and all its tasks. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteBoard}
+              disabled={deleteLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteLoading ? "Deleting…" : "Delete board"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </aside>
   )
 }

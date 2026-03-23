@@ -1,0 +1,38 @@
+# Orbit
+
+> Project management for modern teams.
+
+Orbit is a web-based project management tool built for small to medium teams. It provides kanban-style task boards, team collaboration with role-based access, AI-powered task generation and board summaries, and integrated billing.
+
+## Core features
+
+- **Kanban boards** — Drag-and-drop columns with configurable statuses. Tasks have titles, descriptions, assignees, priority levels (urgent/high/medium/low), and labels.
+- **Team collaboration** — Invite team members by email. Roles: Owner, Admin, Member. Per-workspace member management.
+- **AI features (Pro plan)** — AI task description generation, epic-to-subtask breakdown, and board summaries powered by streaming AI responses.
+- **Workspaces** — Organise boards into named workspaces. Teams can have multiple workspaces.
+- **Billing** — Three tiers managed through Stripe. Upgrade/downgrade at any time from billing settings.
+
+## Pricing
+
+| Plan | Price | Projects | Members | AI |
+|------|-------|----------|---------|-----|
+| Free | $0/mo | 1 | 1 (solo) | No |
+| Lite | $9/mo | 10 | Up to 3 | No |
+| Pro  | $19/mo | Unlimited | Unlimited | Yes |
+
+All paid plans can be cancelled at any time. Existing data is never deleted when hitting plan limits — you are prompted to upgrade instead.
+
+## Pages
+
+- `/` — Landing page with product overview, features, and pricing
+- `/pricing` — Full pricing page with plan details and FAQ
+- `/sign-up` — Create an account (free, no credit card required)
+- `/sign-in` — Sign in to an existing account
+- `/onboarding` — First-run wizard to create a team and workspace
+- `/w/[workspaceId]/b/[boardId]` — Kanban board view
+- `/settings/billing` — Billing and usage dashboard
+- `/settings/profile` — User profile and notification preferences
+
+## Tech stack
+
+Next.js (App Router), React, Tailwind CSS, Supabase (auth + PostgreSQL), Stripe (payments), Resend (email), Vercel AI SDK (streaming AI).

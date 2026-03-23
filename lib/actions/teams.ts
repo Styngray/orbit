@@ -64,7 +64,7 @@ export async function createWorkspace(
 export async function createTeamAndWorkspace(
   teamName: string,
   workspaceName: string
-): Promise<{ data?: { workspaceId: string }; error?: string }> {
+): Promise<{ data?: { teamId: string; workspaceId: string }; error?: string }> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -94,7 +94,7 @@ export async function createTeamAndWorkspace(
     .single()
   if (workspaceError) return { error: workspaceError.message }
 
-  return { data: { workspaceId: workspace.id } }
+  return { data: { teamId: team.id, workspaceId: workspace.id } }
 }
 
 export async function updateTeam(

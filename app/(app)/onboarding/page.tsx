@@ -1,41 +1,55 @@
 import { redirect } from "next/navigation"
 import { createTeamAndWorkspace } from "@/lib/actions/teams"
+import { claimGuestCheckout } from "@/lib/actions/billing"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 interface Props {
-  searchParams: Promise<{ step?: string; team?: string; error?: string }>
+  searchParams: Promise<{ step?: string; team?: string; error?: string; plan?: string; session_id?: string }>
 }
 
 export default async function OnboardingPage({ searchParams }: Props) {
-  const { step, team, error } = await searchParams
+  const { step, team, error, plan, session_id } = await searchParams
 
   async function goToWorkspaceStep(formData: FormData) {
     "use server"
     const teamName = (formData.get("teamName") as string)?.trim()
+    const planParam = formData.get("plan") as string | null
+    const sessionId = formData.get("session_id") as string | null
     if (!teamName) return
-    redirect(`/onboarding?step=2&team=${encodeURIComponent(teamName)}`)
+    const params = new URLSearchParams({ step: "2", team: teamName })
+    if (planParam) params.set("plan", planParam)
+    if (sessionId) params.set("session_id", sessionId)
+    redirect(`/onboarding?${params}`)
   }
 
   async function createWorkspace(formData: FormData) {
     "use server"
     const teamName = (formData.get("teamName") as string)?.trim()
     const workspaceName = (formData.get("workspaceName") as string)?.trim()
+    const planParam = formData.get("plan") as string | null
+    const sessionId = formData.get("session_id") as string | null
     if (!teamName || !workspaceName) return
 
     const result = await createTeamAndWorkspace(teamName, workspaceName)
 
     if (result.error) {
-      const params = new URLSearchParams({
-        step: "2",
-        team: teamName,
-        error: result.error,
-      })
+      const params = new URLSearchParams({ step: "2", team: teamName, error: result.error })
+      if (planParam) params.set("plan", planParam)
+      if (sessionId) params.set("session_id", sessionId)
       redirect(`/onboarding?${params}`)
     }
 
-    redirect(`/w/${result.data!.workspaceId}`)
+    const teamId = result.data!.teamId
+    const workspaceId = result.data!.workspaceId
+
+    // Claim the Stripe session paid before sign-up
+    if (sessionId && (planParam === "lite" || planParam === "pro")) {
+      await claimGuestCheckout(teamId, sessionId, planParam)
+    }
+
+    redirect(`/w/${workspaceId}`)
   }
 
   const isStep2 = step === "2" && !!team
@@ -56,6 +70,8 @@ export default async function OnboardingPage({ searchParams }: Props) {
 
           {!isStep2 ? (
             <form action={goToWorkspaceStep} className="space-y-4">
+              {plan && <input type="hidden" name="plan" value={plan} />}
+              {session_id && <input type="hidden" name="session_id" value={session_id} />}
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">
                   Name your team
@@ -81,6 +97,8 @@ export default async function OnboardingPage({ searchParams }: Props) {
           ) : (
             <form action={createWorkspace} className="space-y-4">
               <input type="hidden" name="teamName" value={team} />
+              {plan && <input type="hidden" name="plan" value={plan} />}
+              {session_id && <input type="hidden" name="session_id" value={session_id} />}
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">
                   Create your first workspace

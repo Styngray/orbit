@@ -33,8 +33,8 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public paths that don't require auth
-  const publicPaths = ["/sign-in", "/sign-up", "/auth/confirm", "/invite", "/forgot-password", "/reset-password", "/api/stripe", "/pricing"]
-  const isPublic = publicPaths.some((p) => pathname.startsWith(p))
+  const publicPaths = ["/sign-in", "/sign-up", "/auth/confirm", "/invite", "/forgot-password", "/reset-password", "/api/stripe", "/pricing", "/privacy", "/terms"]
+  const isPublic = pathname === "/" || publicPaths.some((p) => pathname.startsWith(p))
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()
