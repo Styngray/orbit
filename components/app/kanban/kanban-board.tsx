@@ -21,12 +21,26 @@ import { KanbanList } from "./kanban-list"
 import { TaskSheet } from "./task-sheet"
 import { NewIssueDialog } from "./new-issue-dialog"
 import { createTask, reorderTask, updateTask } from "@/lib/actions/tasks"
-import { STATUSES, type TaskStatus } from "@/lib/kanban-constants"
+import { STATUSES, type TaskStatus, type TaskPriority } from "@/lib/kanban-constants"
 import type { Task } from "@/lib/actions/tasks"
-import type { TaskPriority } from "@/lib/kanban-constants"
 import type { CustomLabel } from "@/lib/label-constants"
 
 type ViewMode = "board" | "list"
+
+const PRIORITY_RANK: Record<TaskPriority, number> = {
+  urgent: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+  none: 4,
+}
+
+function sortByPriority(a: Task, b: Task): number {
+  const pa = PRIORITY_RANK[a.priority as TaskPriority] ?? 4
+  const pb = PRIORITY_RANK[b.priority as TaskPriority] ?? 4
+  if (pa !== pb) return pa - pb
+  return a.sort_order - b.sort_order
+}
 
 interface Member {
   user_id: string
@@ -163,7 +177,7 @@ export function KanbanBoard({
 
     const columnTasks = optimisticTasks
       .filter((t) => t.status === targetStatus && t.id !== taskId)
-      .sort((a, b) => a.sort_order - b.sort_order)
+      .sort(sortByPriority)
 
     let newOrder: number
     const overTaskId = statusValues.includes(over.id as TaskStatus)
@@ -297,7 +311,7 @@ export function KanbanBoard({
               {STATUSES.map((statusConfig) => {
                 const columnTasks = optimisticTasks
                   .filter((t) => t.status === statusConfig.value)
-                  .sort((a, b) => a.sort_order - b.sort_order)
+                  .sort(sortByPriority)
 
                 return (
                   <KanbanColumn

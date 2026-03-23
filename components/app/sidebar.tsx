@@ -1,10 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
-import { Settings, Plus, ChevronDown, LogOut, User, ChevronUp, CreditCard } from "lucide-react"
+import { Settings, Plus, ChevronDown, LogOut, User, ChevronUp, CreditCard, Bot } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { signOut } from "@/lib/actions/auth"
+import { AIChatSheet } from "./ai-chat-sheet"
+import { PLAN_LIMITS } from "@/lib/plans"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +56,7 @@ export function Sidebar({
 }: SidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const [chatOpen, setChatOpen] = useState(false)
   const workspaceId =
     pathname.match(/^\/w\/([^/]+)/)?.[1] ?? workspaces[0]?.id
   const boardId = pathname.match(/^\/w\/[^/]+\/b\/([^/?]+)/)?.[1]
@@ -163,10 +167,17 @@ export function Sidebar({
         </nav>
       </div>
 
-      {/* Bottom: Theme toggle + Settings + User */}
+      {/* Bottom: Theme toggle + AI chat + Settings + User */}
       <div className="border-t border-sidebar-border">
         <div className="flex items-center px-3 py-1.5">
           <ThemeToggle />
+          <button
+            onClick={() => setChatOpen(true)}
+            className="ml-auto size-7 flex items-center justify-center rounded-md hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+            title="AI Assistant"
+          >
+            <Bot className="size-4" />
+          </button>
         </div>
 
         <DropdownMenu>
@@ -225,6 +236,13 @@ export function Sidebar({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <AIChatSheet
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        teamId={teamId}
+        isPro={PLAN_LIMITS[currentPlan].ai}
+      />
     </aside>
   )
 }
